@@ -31,6 +31,21 @@ const WorkerOutputSchema = z.object({
   }))
 })
 
+const ApiResponseSchema = z.object({
+  analysis: z.object({
+    analysis: z.string(),
+    tasks: z.array(z.object({
+      type: z.string(),
+      description: z.string(),
+    })),
+  }),
+  finalRecommendation: z.object({
+    summary: z.string(),
+    reasoning: z.string(),
+    keyPoints: z.array(z.string()),
+  }),
+})
+
 function generateOrchestratorPrompt(context: string, preferences: string[], constraints: string[]) {
   return `Break down this decision-making task into specialized analyses:
 Context: ${context}
@@ -73,12 +88,17 @@ Generate recommendations focusing on your specialized perspective. Return JSON:
 }
 
 function generateSynthesisPrompt(context: string, workerOutputs: any[]) {
-  return `Synthesize these specialized analyses into final recommendations:
+  return `Synthesize these specialized analyses into a final recommendation:
 Context: ${context}
 Worker Outputs: ${JSON.stringify(workerOutputs, null, 2)}
 
-Combine and refine the recommendations, removing duplicates and conflicts.
-Return JSON in the same recommendation format.`
+Create a concise but comprehensive recommendation that combines the insights from all analyses.
+Return JSON in this format:
+{
+  "summary": "A clear, concise summary of the recommendation (2-3 sentences)",
+  "reasoning": "A paragraph explaining the key reasoning behind this recommendation",
+  "keyPoints": ["Key point 1", "Key point 2", "Key point 3"]
+}`
 }
 
 async function runOrchestrator(context: string, preferences: string[], constraints: string[]) {
@@ -98,7 +118,9 @@ async function runOrchestrator(context: string, preferences: string[], constrain
     response_format: { type: 'json_object' },
   })
 
-  return JSON.parse(completion.choices[0].message.content)
+  const content = completion.choices[0].message.content
+  if (!content) throw new Error('No content in orchestrator response')
+  return JSON.parse(content)
 }
 
 async function runWorker(context: string, preferences: string[], constraints: string[], taskType: string, taskDescription: string) {
@@ -118,7 +140,9 @@ async function runWorker(context: string, preferences: string[], constraints: st
     response_format: { type: 'json_object' },
   })
 
-  return JSON.parse(completion.choices[0].message.content)
+  const content = completion.choices[0].message.content
+  if (!content) throw new Error('No content in worker response')
+  return JSON.parse(content)
 }
 
 async function synthesizeOutputs(context: string, workerOutputs: any[]) {
@@ -138,7 +162,9 @@ async function synthesizeOutputs(context: string, workerOutputs: any[]) {
     response_format: { type: 'json_object' },
   })
 
-  return JSON.parse(completion.choices[0].message.content)
+  const content = completion.choices[0].message.content
+  if (!content) throw new Error('No content in synthesis response')
+  return JSON.parse(content)
 }
 
 export async function POST(request: Request) {
@@ -151,18 +177,28 @@ export async function POST(request: Request) {
     }
 
     // Get task breakdown from orchestrator
-    const { tasks } = await runOrchestrator(context, preferences, constraints)
+    const orchestratorOutput = await runOrchestrator(context, preferences, constraints)
+    const { tasks } = orchestratorOutput
 
     // Run specialized workers in parallel
-    const workerPromises = tasks.map(task => 
+    const workerPromises = tasks.map((task: { type: string; description: string }) => 
       runWorker(context, preferences, constraints, task.type, task.description)
     )
     const workerOutputs = await Promise.all(workerPromises)
 
-    // Synthesize worker outputs into final recommendations
-    const finalRecommendations = await synthesizeOutputs(context, workerOutputs)
+    // Synthesize worker outputs into final recommendation
+    const synthesisOutput = await synthesizeOutputs(context, workerOutputs)
     
-    return NextResponse.json(finalRecommendations.recommendations)
+    // Prepare the API response
+    const response = {
+      analysis: orchestratorOutput,
+      finalRecommendation: synthesisOutput,
+    }
+
+    // Validate the response
+    ApiResponseSchema.parse(response)
+    
+    return NextResponse.json(response)
 
   } catch (error) {
     console.error('Error in recommendations API:', error)
