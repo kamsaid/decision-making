@@ -52,11 +52,24 @@ export async function POST(request: Request) {
   try {
     // Parse and validate request body
     const body = await request.json()
+    console.log('Received request body:', body)
+
     const { context, preferences, constraints } = RequestSchema.parse(body)
+    console.log('Validated input:', { context, preferences, constraints })
+
+    // Check if API key is configured
+    if (!process.env.DEEPSEEK_API_KEY) {
+      console.error('DeepSeek API key is not configured')
+      return NextResponse.json(
+        { error: 'API key not configured' },
+        { status: 500 }
+      )
+    }
 
     // Generate AI completion using DeepSeek
+    console.log('Sending request to DeepSeek API...')
     const completion = await deepseek.chat.completions.create({
-      model: 'deepseek-reasoner', // Use DeepSeek's reasoning model
+      model: 'deepseek-chat', // Use DeepSeek's chat model
       messages: [
         {
           role: 'system',
@@ -75,13 +88,25 @@ export async function POST(request: Request) {
     // Parse and validate AI response
     const responseText = completion.choices[0].message.content
     if (!responseText) {
+      console.error('No response content from DeepSeek API')
       throw new Error('No response from AI')
     }
 
-    const response = JSON.parse(responseText)
-    return NextResponse.json(response.recommendations)
+    console.log('Received response from DeepSeek:', responseText)
+
+    try {
+      const response = JSON.parse(responseText)
+      if (!response.recommendations || !Array.isArray(response.recommendations)) {
+        console.error('Invalid response format:', response)
+        throw new Error('Invalid response format from AI')
+      }
+      return NextResponse.json(response.recommendations)
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', parseError)
+      throw new Error('Failed to parse AI response')
+    }
   } catch (error) {
-    console.error('Error generating recommendations:', error)
+    console.error('Error in recommendations API:', error)
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -90,8 +115,24 @@ export async function POST(request: Request) {
       )
     }
 
+    // Handle OpenAI API errors
+    if (error instanceof OpenAI.APIError) {
+      console.error('DeepSeek API error:', {
+        status: error.status,
+        message: error.message,
+        type: error.type,
+      })
+      return NextResponse.json(
+        { error: `AI service error: ${error.message}` },
+        { status: error.status || 500 }
+      )
+    }
+
     return NextResponse.json(
-      { error: 'Failed to generate recommendations' },
+      { 
+        error: 'Failed to generate recommendations',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

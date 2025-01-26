@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Send } from 'lucide-react'
+import { Send, AlertCircle } from 'lucide-react'
 
 // Interface for form data
 interface FormData {
@@ -22,30 +22,47 @@ const initialFormData: FormData = {
 export default function DecisionForm() {
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null)
 
     try {
+      // Filter out empty strings from preferences and constraints
+      const cleanedData = {
+        ...formData,
+        preferences: formData.preferences.filter(p => p.trim() !== ''),
+        constraints: formData.constraints.filter(c => c.trim() !== '')
+      }
+
       const response = await fetch('/api/recommendations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(cleanedData),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('Failed to get recommendations')
+        throw new Error(data.error || data.details || 'Failed to get recommendations')
       }
 
-      router.push('/recommendations')
+      // Construct the URL with query parameters
+      const params = new URLSearchParams()
+      params.set('context', cleanedData.context)
+      cleanedData.preferences.forEach(p => params.append('preferences', p))
+      cleanedData.constraints.forEach(c => params.append('constraints', c))
+
+      router.push(`/recommendations?${params.toString()}`)
     } catch (error) {
       console.error('Error:', error)
-      alert('Failed to get recommendations. Please try again.')
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred')
     } finally {
       setIsLoading(false)
     }
@@ -81,6 +98,17 @@ export default function DecisionForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-sm">
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-2">
+          <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-medium text-red-800">Error</h3>
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* Decision Context */}
       <div>
         <label htmlFor="context" className="block text-sm font-medium text-gray-700">
