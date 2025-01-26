@@ -13,7 +13,15 @@ const RequestSchema = z.object({
   constraints: z.array(z.string()),
 })
 
-const RecommendationSchema = z.object({
+const TaskListSchema = z.object({
+  analysis: z.string(),
+  tasks: z.array(z.object({
+    type: z.enum(["preference_analysis", "constraint_validation", "creative_solutions"]),
+    description: z.string(),
+  })),
+})
+
+const WorkerOutputSchema = z.object({
   recommendations: z.array(z.object({
     id: z.string(),
     title: z.string(),
@@ -23,30 +31,39 @@ const RecommendationSchema = z.object({
   }))
 })
 
-const EvaluationSchema = z.object({
-  evaluation: z.enum(["PASS", "NEEDS_IMPROVEMENT"]),
-  feedback: z.string()
-})
-
-function generatePrompt(context: string, preferences: string[], constraints: string[], feedback = '') {
-  return `As an AI decision-making assistant, help analyze the following decision:
-
+function generateOrchestratorPrompt(context: string, preferences: string[], constraints: string[]) {
+  return `Break down this decision-making task into specialized analyses:
 Context: ${context}
+Preferences: ${preferences.join(', ')}
+Constraints: ${constraints.join(', ')}
 
-Preferences:
-${preferences.map(p => `- ${p}`).join('\n')}
+Analyze how to best approach this decision and break it into specialized subtasks.
+Return JSON with:
+{
+  "analysis": "Overall analysis of the decision context",
+  "tasks": [
+    {
+      "type": "preference_analysis | constraint_validation | creative_solutions",
+      "description": "Specific focus and approach for this subtask"
+    }
+  ]
+}`
+}
 
-Constraints:
-${constraints.map(c => `- ${c}`).join('\n')}
+function generateWorkerPrompt(context: string, preferences: string[], constraints: string[], taskType: string, taskDescription: string) {
+  return `Analyze this decision based on your specialized role:
+Context: ${context}
+Preferences: ${preferences.join(', ')}
+Constraints: ${constraints.join(', ')}
+Focus Area: ${taskType}
+Task Description: ${taskDescription}
 
-${feedback ? `Previous feedback to address:\n${feedback}\n` : ''}
-
-Please provide 3-5 recommendations in JSON format:
+Generate recommendations focusing on your specialized perspective. Return JSON:
 {
   "recommendations": [
     {
       "id": "unique-id",
-      "title": "Clear, concise title",
+      "title": "Clear title",
       "description": "Detailed explanation",
       "pros": ["pro1", "pro2"],
       "cons": ["con1", "con2"]
@@ -55,69 +72,73 @@ Please provide 3-5 recommendations in JSON format:
 }`
 }
 
-function generateEvaluatorPrompt(context: string, preferences: string[], constraints: string[], recommendations: string) {
-  return `Evaluate these recommendations for a decision-making task:
-
+function generateSynthesisPrompt(context: string, workerOutputs: any[]) {
+  return `Synthesize these specialized analyses into final recommendations:
 Context: ${context}
-Preferences: ${preferences.join(', ')}
-Constraints: ${constraints.join(', ')}
+Worker Outputs: ${JSON.stringify(workerOutputs, null, 2)}
 
-Recommendations:
-${recommendations}
-
-Evaluate for:
-1. Alignment with preferences
-2. Respect for constraints
-3. Actionability and specificity
-4. Quality of pros/cons analysis
-
-Output JSON:
-{
-  "evaluation": "PASS" or "NEEDS_IMPROVEMENT",
-  "feedback": "Detailed feedback if improvements needed"
-}`
+Combine and refine the recommendations, removing duplicates and conflicts.
+Return JSON in the same recommendation format.`
 }
 
-async function generateRecommendations(context: string, preferences: string[], constraints: string[], feedback = '') {
+async function runOrchestrator(context: string, preferences: string[], constraints: string[]) {
   const completion = await deepseek.chat.completions.create({
     model: 'deepseek-chat',
     messages: [
       {
         role: 'system',
-        content: 'You are a decision-making assistant that provides well-reasoned recommendations.',
+        content: 'You are an orchestrator that breaks down complex decisions into specialized analyses.',
       },
       {
         role: 'user',
-        content: generatePrompt(context, preferences, constraints, feedback),
+        content: generateOrchestratorPrompt(context, preferences, constraints),
       },
     ],
     temperature: 0.7,
-    max_tokens: 2000,
     response_format: { type: 'json_object' },
   })
 
-  return completion.choices[0].message.content
+  return JSON.parse(completion.choices[0].message.content)
 }
 
-async function evaluateRecommendations(context: string, preferences: string[], constraints: string[], recommendations: string) {
+async function runWorker(context: string, preferences: string[], constraints: string[], taskType: string, taskDescription: string) {
   const completion = await deepseek.chat.completions.create({
     model: 'deepseek-chat',
     messages: [
       {
         role: 'system',
-        content: 'You are an evaluator analyzing decision recommendations for completeness and quality.',
+        content: `You are a specialized decision analyst focusing on ${taskType}.`,
       },
       {
         role: 'user',
-        content: generateEvaluatorPrompt(context, preferences, constraints, recommendations),
+        content: generateWorkerPrompt(context, preferences, constraints, taskType, taskDescription),
       },
     ],
-    temperature: 0.3,
-    max_tokens: 1000,
+    temperature: 0.7,
     response_format: { type: 'json_object' },
   })
 
-  return completion.choices[0].message.content
+  return JSON.parse(completion.choices[0].message.content)
+}
+
+async function synthesizeOutputs(context: string, workerOutputs: any[]) {
+  const completion = await deepseek.chat.completions.create({
+    model: 'deepseek-chat',
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a synthesis expert combining multiple specialized analyses into coherent recommendations.',
+      },
+      {
+        role: 'user',
+        content: generateSynthesisPrompt(context, workerOutputs),
+      },
+    ],
+    temperature: 0.5,
+    response_format: { type: 'json_object' },
+  })
+
+  return JSON.parse(completion.choices[0].message.content)
 }
 
 export async function POST(request: Request) {
@@ -129,37 +150,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
     }
 
-    let currentRecommendations = ''
-    let attempts = 0
-    const MAX_ATTEMPTS = 3
+    // Get task breakdown from orchestrator
+    const { tasks } = await runOrchestrator(context, preferences, constraints)
 
-    while (attempts < MAX_ATTEMPTS) {
-      currentRecommendations = await generateRecommendations(
-        context, 
-        preferences, 
-        constraints, 
-        attempts > 0 ? currentRecommendations : ''
-      )
+    // Run specialized workers in parallel
+    const workerPromises = tasks.map(task => 
+      runWorker(context, preferences, constraints, task.type, task.description)
+    )
+    const workerOutputs = await Promise.all(workerPromises)
 
-      const evaluationResult = await evaluateRecommendations(
-        context,
-        preferences,
-        constraints,
-        currentRecommendations
-      )
-
-      const evaluation = EvaluationSchema.parse(JSON.parse(evaluationResult))
-
-      if (evaluation.evaluation === "PASS") {
-        const parsedRecommendations = RecommendationSchema.parse(JSON.parse(currentRecommendations))
-        return NextResponse.json(parsedRecommendations.recommendations)
-      }
-
-      attempts++
-    }
-
-    // Return best attempt if max attempts reached
-    const finalRecommendations = RecommendationSchema.parse(JSON.parse(currentRecommendations))
+    // Synthesize worker outputs into final recommendations
+    const finalRecommendations = await synthesizeOutputs(context, workerOutputs)
+    
     return NextResponse.json(finalRecommendations.recommendations)
 
   } catch (error) {

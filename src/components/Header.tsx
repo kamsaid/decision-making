@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Home, HelpCircle } from 'lucide-react'
+import { Home } from 'lucide-react'
 
 // Header component with navigation links
 export default function Header() {
@@ -17,17 +17,6 @@ export default function Header() {
             <Home className="h-6 w-6" />
             <span className="font-semibold text-lg">SeekHelp</span>
           </Link>
-
-          {/* Navigation links */}
-          <nav className="flex items-center space-x-4">
-            <Link 
-              href="/about" 
-              className="flex items-center space-x-1 text-white hover:text-white/80 transition-colors"
-            >
-              <HelpCircle className="h-5 w-5" />
-              <span>About</span>
-            </Link>
-          </nav>
         </div>
       </div>
     </header>

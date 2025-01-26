@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import Header from '@/components/Header'
 import RecommendationCard from '@/components/RecommendationCard'
+import { Home } from 'lucide-react'
 
 // Interface for recommendation data
 interface Recommendation {
@@ -80,25 +82,42 @@ export default function RecommendationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100 dark:from-black dark:to-neutral-900">
       <Header />
       
       <main className="max-w-4xl mx-auto px-4 py-12">
+        {/* Back to Home Button */}
+        <Link
+          href="/"
+          className="inline-flex items-center space-x-2 text-white hover:text-white/80 transition-colors mb-8"
+        >
+          <Home className="h-5 w-5" />
+          <span>Seek Help</span>
+        </Link>
+
         {/* Page Title */}
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-          Your Personalized Recommendations
-        </h1>
+        <div className="text-center mb-12">
+          <div className="relative">
+            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-r from-transparent via-indigo-500/10 to-transparent blur-2xl" />
+            <h1 className="relative text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-900 to-neutral-600 dark:from-neutral-100 dark:to-neutral-400 mb-4">
+              Your Personalized Recommendations
+            </h1>
+          </div>
+          <p className="text-xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
+            Based on your preferences and constraints, here are my suggestions.
+          </p>
+        </div>
 
         {/* Loading State */}
         {isLoading && (
           <div className="flex justify-center items-center min-h-[200px]">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-current border-t-transparent text-blue-600 dark:text-blue-400" />
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-center">
+          <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-400 text-center">
             {error}
           </div>
         )}
@@ -115,7 +134,7 @@ export default function RecommendationsPage() {
             ))}
 
             {recommendations.length === 0 && (
-              <div className="text-center text-gray-600">
+              <div className="text-center text-neutral-600 dark:text-neutral-400">
                 No recommendations found. Please try adjusting your criteria.
               </div>
             )}
