@@ -15,7 +15,7 @@ export default function Header() {
             className="flex items-center space-x-2 text-gray-900 hover:text-gray-600"
           >
             <Home className="h-6 w-6" />
-            <span className="font-semibold text-lg">Decision Assistant</span>
+            <span className="font-semibold text-lg">SeekHelp</span>
           </Link>
 
           {/* Navigation links */}

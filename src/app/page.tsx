@@ -11,7 +11,7 @@ export default function Home() {
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Make Better Decisions
+            Seek Help
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Our AI-powered assistant helps you analyze your options and make informed choices 
