@@ -13,12 +13,13 @@ export default function Home() {
           <div className="relative">
             <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-r from-transparent via-indigo-500/10 to-transparent blur-2xl" />
             <h1 className="relative text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-900 to-neutral-600 dark:from-neutral-100 dark:to-neutral-400 mb-4">
-              Make Better Decisions
+              Smarter Choices, Together
             </h1>
           </div>
           <p className="text-xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
-            Our AI-powered assistant helps you analyze your options and make informed choices 
-            based on your preferences and constraints.
+            Your AI Companion for Clearer Choices
+            <br />
+            <em className="italic"> Powered by advanced language models and decision science</em>
           </p>
         </div>
 

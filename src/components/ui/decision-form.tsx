@@ -5,6 +5,12 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { Send, Plus, Minus } from 'lucide-react'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 // Interface for form data
 interface FormData {
@@ -62,11 +68,11 @@ export function DecisionFormUI({ onSubmit, isLoading, error }: DecisionFormUIPro
 
   return (
     <div className="max-w-2xl w-full mx-auto rounded-none md:rounded-2xl p-4 md:p-8 shadow-input bg-white dark:bg-black">
-      <h2 className="font-bold text-xl text-neutral-800 dark:text-neutral-200">
-        Make a Better Decision
+      <h2 className="font-bold text-3xl text-neutral-800 dark:text-neutral-200 text-center">
+        How can I help you?
       </h2>
-      <p className="text-neutral-600 text-sm max-w-sm mt-2 dark:text-neutral-300">
-        Let our AI assistant help you analyze your options and make an informed choice.
+      <p className="text-neutral-600 text-sm max-w-sm mt-2 dark:text-neutral-300 text-center">
+        
       </p>
 
       <form className="my-8" onSubmit={handleSubmit}>
@@ -77,87 +83,106 @@ export function DecisionFormUI({ onSubmit, isLoading, error }: DecisionFormUIPro
           </div>
         )}
 
-        {/* Decision Context */}
-        <LabelInputContainer className="mb-6">
-          <Label htmlFor="context">What decision are you trying to make?</Label>
-          <Input
-            id="context"
-            value={formData.context}
-            onChange={(e) => setFormData(prev => ({ ...prev, context: e.target.value }))}
-            placeholder="e.g., Should I move to a new city?"
-            required
-          />
-        </LabelInputContainer>
-
-        {/* Preferences */}
-        <div className="mb-6">
-          <Label className="block mb-4">What are your preferences?</Label>
-          {formData.preferences.map((pref, index) => (
-            <div key={index} className="flex gap-2 mb-2">
+        <Accordion type="single" collapsible className="w-full space-y-4">
+          {/* Decision Context */}
+          <AccordionItem value="context" className="border border-neutral-200 dark:border-neutral-800 rounded-lg px-4">
+            <AccordionTrigger className="hover:no-underline">
+              <span className="text-neutral-800 dark:text-neutral-200">what's on your mind?</span>
+            </AccordionTrigger>
+            <AccordionContent>
               <Input
-                value={pref}
-                onChange={(e) => handleFieldChange('preferences', index, e.target.value)}
-                placeholder="e.g., Good weather"
+                id="context"
+                value={formData.context}
+                onChange={(e) => setFormData(prev => ({ ...prev, context: e.target.value }))}
+                placeholder="e.g., moving to a new city, changing careers, buying a house"
                 required
+                className="mt-2"
               />
-              {formData.preferences.length > 1 && (
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Preferences */}
+          <AccordionItem value="preferences" className="border border-neutral-200 dark:border-neutral-800 rounded-lg px-4">
+            <AccordionTrigger className="hover:no-underline">
+              <span className="text-neutral-800 dark:text-neutral-200">what matters most to you?</span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-2">
+                {formData.preferences.map((pref, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={pref}
+                      onChange={(e) => handleFieldChange('preferences', index, e.target.value)}
+                      placeholder="e.g., work-life balance, growth opportunities, financial stability"
+                      required
+                    />
+                    {formData.preferences.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveField('preferences', index)}
+                        className="p-2 text-red-600 hover:text-red-700"
+                      >
+                        <Minus className="h-5 w-5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
                 <button
                   type="button"
-                  onClick={() => handleRemoveField('preferences', index)}
-                  className="p-2 text-red-600 hover:text-red-700"
+                  onClick={() => handleAddField('preferences')}
+                  className="mt-2 flex items-center text-sm text-blue-600 hover:text-blue-700"
                 >
-                  <Minus className="h-5 w-5" />
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add another preference
                 </button>
-              )}
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => handleAddField('preferences')}
-            className="mt-2 flex items-center text-sm text-blue-600 hover:text-blue-700"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add another preference
-          </button>
-        </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-        {/* Constraints */}
-        <div className="mb-8">
-          <Label className="block mb-4">What are your constraints?</Label>
-          {formData.constraints.map((constraint, index) => (
-            <div key={index} className="flex gap-2 mb-2">
-              <Input
-                value={constraint}
-                onChange={(e) => handleFieldChange('constraints', index, e.target.value)}
-                placeholder="e.g., Budget under $2000/month"
-                required
-              />
-              {formData.constraints.length > 1 && (
+          {/* Constraints */}
+          <AccordionItem value="constraints" className="border border-neutral-200 dark:border-neutral-800 rounded-lg px-4">
+            <AccordionTrigger className="hover:no-underline">
+              <span className="text-neutral-800 dark:text-neutral-200">what's holding you back?</span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-2">
+                {formData.constraints.map((constraint, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={constraint}
+                      onChange={(e) => handleFieldChange('constraints', index, e.target.value)}
+                      placeholder="e.g., budget, timeline, family commitments"
+                      required
+                    />
+                    {formData.constraints.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveField('constraints', index)}
+                        className="p-2 text-red-600 hover:text-red-700"
+                      >
+                        <Minus className="h-5 w-5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
                 <button
                   type="button"
-                  onClick={() => handleRemoveField('constraints', index)}
-                  className="p-2 text-red-600 hover:text-red-700"
+                  onClick={() => handleAddField('constraints')}
+                  className="mt-2 flex items-center text-sm text-blue-600 hover:text-blue-700"
                 >
-                  <Minus className="h-5 w-5" />
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add another constraint
                 </button>
-              )}
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => handleAddField('constraints')}
-            className="mt-2 flex items-center text-sm text-blue-600 hover:text-blue-700"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add another constraint
-          </button>
-        </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         {/* Submit Button */}
         <button
           type="submit"
           disabled={isLoading}
-          className="bg-gradient-to-br relative group/btn from-black dark:from-zinc-900 dark:to-zinc-900 to-neutral-600 block dark:bg-zinc-800 w-full text-white rounded-md h-10 font-medium shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:shadow-[0px_1px_0px_0px_var(--zinc-800)_inset,0px_-1px_0px_0px_var(--zinc-800)_inset]"
+          className="mt-8 bg-gradient-to-br relative group/btn from-black dark:from-zinc-900 dark:to-zinc-900 to-neutral-600 block dark:bg-zinc-800 w-full text-white rounded-md h-10 font-medium shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:shadow-[0px_1px_0px_0px_var(--zinc-800)_inset,0px_-1px_0px_0px_var(--zinc-800)_inset]"
         >
           {isLoading ? (
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent mx-auto" />

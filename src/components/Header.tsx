@@ -6,13 +6,13 @@ import { Home, HelpCircle } from 'lucide-react'
 // Header component with navigation links
 export default function Header() {
   return (
-    <header className="bg-white border-b border-gray-200">
+    <header className="bg-transparent">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and site title */}
           <Link 
             href="/" 
-            className="flex items-center space-x-2 text-gray-900 hover:text-gray-600"
+            className="flex items-center space-x-2 text-white hover:text-white/80 transition-colors"
           >
             <Home className="h-6 w-6" />
             <span className="font-semibold text-lg">SeekHelp</span>
@@ -22,7 +22,7 @@ export default function Header() {
           <nav className="flex items-center space-x-4">
             <Link 
               href="/about" 
-              className="flex items-center space-x-1 text-gray-600 hover:text-gray-900"
+              className="flex items-center space-x-1 text-white hover:text-white/80 transition-colors"
             >
               <HelpCircle className="h-5 w-5" />
               <span>About</span>
