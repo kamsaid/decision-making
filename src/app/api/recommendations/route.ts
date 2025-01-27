@@ -39,7 +39,7 @@ const WorkerOutputSchema = z.object({
     pros: z.array(z.string()),
     cons: z.array(z.string())
   }))
-})
+}).nullable() // Allow null for failed workers
 
 const ApiResponseSchema = z.object({
   analysis: z.object({
@@ -47,6 +47,11 @@ const ApiResponseSchema = z.object({
     tasks: z.array(z.object({
       type: z.string(),
       description: z.string(),
+    })),
+    workerStatus: z.array(z.object({
+      type: z.string(),
+      success: z.boolean(),
+      error: z.string().nullable()
     })),
   }),
   finalRecommendation: z.object({
@@ -136,25 +141,50 @@ export async function POST(req: Request) {
     const tasks = TaskListSchema.parse(orchestratorOutput).tasks
     console.log(`Starting ${tasks.length} workers in parallel`)
     
-    // Run workers in parallel
+    // Run workers in parallel with timeout handling
     const workerOutputs = await Promise.all(
       tasks.map(async (task, index) => {
         const workerStart = Date.now()
-        const result = await runWorker(context, preferences, constraints, task.type, task.description)
-        console.log(`Worker ${index + 1} complete:`, Date.now() - workerStart, 'ms')
-        return result
+        try {
+          const result = await runWorker(context, preferences, constraints, task.type, task.description)
+          console.log(`Worker ${index + 1} (${task.type}) complete:`, Date.now() - workerStart, 'ms')
+          return { type: task.type, output: result, error: null }
+        } catch (error: any) {
+          console.error(`Worker ${index + 1} (${task.type}) failed:`, error)
+          return { type: task.type, output: null, error: error.message || 'Unknown error' }
+        }
       })
     )
-    console.log('All workers complete:', Date.now() - startTime, 'ms')
+
+    // Filter out failed workers but continue if at least one succeeded
+    const successfulOutputs = workerOutputs.filter(w => w.output !== null)
+    console.log(`${successfulOutputs.length}/${tasks.length} workers completed successfully`)
+
+    if (successfulOutputs.length === 0) {
+      throw new Error('All workers failed. Please try again.')
+    }
 
     // Synthesis
     console.log('Starting synthesis')
-    const finalRecommendation = await synthesizeOutputs(context, workerOutputs)
+    const finalRecommendation = await synthesizeOutputs(
+      context, 
+      successfulOutputs.map(w => ({
+        type: w.type,
+        recommendations: w.output.recommendations
+      }))
+    )
     console.log('Synthesis complete:', Date.now() - startTime, 'ms')
 
-    // Prepare the API response in the expected format
+    // Prepare the API response with more detailed information
     const response = {
-      analysis: orchestratorOutput,
+      analysis: {
+        ...orchestratorOutput,
+        workerStatus: workerOutputs.map(w => ({
+          type: w.type,
+          success: w.output !== null,
+          error: w.error
+        }))
+      },
       finalRecommendation
     }
 
@@ -165,16 +195,19 @@ export async function POST(req: Request) {
   } catch (error: any) {
     const duration = Date.now() - startTime
     console.error('API error after', duration, 'ms:', error)
+
+    // More detailed error response
     return NextResponse.json(
       { 
-        error: error.message || 'An unexpected error occurred', 
+        error: error.message || 'An unexpected error occurred',
         duration,
         timeoutThreshold: 300000,
         stage: duration < 60000 ? 'orchestrator' :
                duration < 180000 ? 'workers' :
-               duration < 270000 ? 'synthesis' : 'unknown'
+               duration < 270000 ? 'synthesis' : 'unknown',
+        details: error instanceof z.ZodError ? error.errors : undefined
       },
-      { status: error.status || 500 }
+      { status: error instanceof z.ZodError ? 400 : error.status || 500 }
     )
   }
 }
@@ -258,7 +291,7 @@ async function synthesizeOutputs(context: string, workerOutputs: any[]) {
         messages: [
           {
             role: 'system',
-            content: 'You are a synthesis expert combining multiple specialized analyses into coherent recommendations.',
+            content: 'You are a synthesis expert combining multiple specialized analyses into coherent recommendations. Some analyses might be missing due to timeouts, but provide the best recommendation with available data.',
           },
           {
             role: 'user',
