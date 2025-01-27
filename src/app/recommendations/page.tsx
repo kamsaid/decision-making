@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
@@ -14,11 +14,10 @@ interface Recommendation {
   description: string
   pros: string[]
   cons: string[]
-  score?: number
 }
 
-// Recommendations page component
-export default function RecommendationsPage() {
+// Content component that uses useSearchParams
+function RecommendationsContent() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -60,27 +59,45 @@ export default function RecommendationsPage() {
     fetchRecommendations()
   }, [searchParams])
 
-  // Handle voting on recommendations
-  const handleVote = async (id: string, score: number) => {
-    try {
-      await fetch(`/api/recommendations/${id}/vote`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ score }),
-      })
+  return (
+    <>
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex justify-center items-center min-h-[200px]">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-current border-t-transparent text-blue-600 dark:text-blue-400" />
+        </div>
+      )}
 
-      setRecommendations(prev =>
-        prev.map(rec =>
-          rec.id === id ? { ...rec, score } : rec
-        )
-      )
-    } catch (err) {
-      console.error('Failed to save vote:', err)
-    }
-  }
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-400 text-center">
+          {error}
+        </div>
+      )}
 
+      {/* Recommendations List */}
+      {!isLoading && !error && (
+        <div className="space-y-6">
+          {recommendations.map((recommendation) => (
+            <RecommendationCard
+              key={recommendation.id}
+              recommendation={recommendation}
+            />
+          ))}
+
+          {recommendations.length === 0 && (
+            <div className="text-center text-neutral-600 dark:text-neutral-400">
+              No recommendations found. Please try adjusting your criteria.
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  )
+}
+
+// Main page component with Suspense boundary
+export default function RecommendationsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100 dark:from-black dark:to-neutral-900">
       <Header />
@@ -108,38 +125,13 @@ export default function RecommendationsPage() {
           </p>
         </div>
 
-        {/* Loading State */}
-        {isLoading && (
+        <Suspense fallback={
           <div className="flex justify-center items-center min-h-[200px]">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-current border-t-transparent text-blue-600 dark:text-blue-400" />
           </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-400 text-center">
-            {error}
-          </div>
-        )}
-
-        {/* Recommendations List */}
-        {!isLoading && !error && (
-          <div className="space-y-6">
-            {recommendations.map((recommendation) => (
-              <RecommendationCard
-                key={recommendation.id}
-                recommendation={recommendation}
-                onVote={(score) => handleVote(recommendation.id, score)}
-              />
-            ))}
-
-            {recommendations.length === 0 && (
-              <div className="text-center text-neutral-600 dark:text-neutral-400">
-                No recommendations found. Please try adjusting your criteria.
-              </div>
-            )}
-          </div>
-        )}
+        }>
+          <RecommendationsContent />
+        </Suspense>
       </main>
     </div>
   )

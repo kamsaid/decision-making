@@ -7,7 +7,6 @@ A Next.js application that helps users make better decisions by analyzing their 
 - Interactive decision form with dynamic fields for preferences and constraints
 - AI-powered recommendations using DeepSeek's reasoning model
 - Detailed recommendations with pros and cons
-- Voting system for recommendations
 - Modern, responsive UI built with Tailwind CSS
 
 ## Tech Stack
@@ -63,7 +62,6 @@ The application will be available at `http://localhost:3000`.
 3. Add your constraints (e.g., "Budget under $2000/month")
 4. Submit the form to get AI-powered recommendations
 5. Review the recommendations and their pros/cons
-6. Vote on recommendations to help improve future suggestions
 
 ## Contributing
 

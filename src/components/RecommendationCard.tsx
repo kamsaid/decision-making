@@ -1,6 +1,6 @@
 'use client'
 
-import { ThumbsUp, ThumbsDown, ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
 
 // Interface for recommendation data
@@ -9,27 +9,17 @@ interface Recommendation {
   description: string
   pros: string[]
   cons: string[]
-  score?: number
 }
 
 interface RecommendationCardProps {
   recommendation: Recommendation
-  onVote?: (score: number) => void
 }
 
 // RecommendationCard component for displaying individual recommendations
 export default function RecommendationCard({ 
-  recommendation,
-  onVote 
+  recommendation
 }: RecommendationCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [score, setScore] = useState(recommendation.score || 0)
-
-  // Handle voting
-  const handleVote = (value: number) => {
-    setScore(value)
-    onVote?.(value)
-  }
 
   return (
     <div className="bg-white dark:bg-black rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden transition-all duration-200 hover:shadow-xl">
@@ -92,32 +82,6 @@ export default function RecommendationCard({
               </ul>
             </div>
           </div>
-
-          {/* Voting */}
-          {onVote && (
-            <div className="mt-6 flex items-center justify-end space-x-2">
-              <button
-                onClick={() => handleVote(1)}
-                className={`p-2 rounded-full transition-all duration-200 ${
-                  score === 1 
-                    ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' 
-                    : 'text-neutral-400 hover:text-emerald-600 dark:hover:text-emerald-400'
-                }`}
-              >
-                <ThumbsUp className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => handleVote(-1)}
-                className={`p-2 rounded-full transition-all duration-200 ${
-                  score === -1 
-                    ? 'bg-rose-100 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400' 
-                    : 'text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400'
-                }`}
-              >
-                <ThumbsDown className="h-5 w-5" />
-              </button>
-            </div>
-          )}
         </div>
       )}
     </div>
