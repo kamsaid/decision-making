@@ -1,4 +1,4 @@
-export const maxDuration = 300 // 5 minute timeout for Pro plan
+export const maxDuration = 180 // 3 minute timeout (reduced from 5 minutes)
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
@@ -12,8 +12,8 @@ import { z } from 'zod'
 const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY || '',
   baseURL: 'https://api.deepseek.com/v1',
-  timeout: 270000, // Reduced to ensure we stay under edge function limit
-  maxRetries: 1,   // Reduced retries to save time
+  timeout: 150000, // 2.5 minutes (reduced from 4.5 minutes)
+  maxRetries: 0,   // No retries to save time
   defaultQuery: { stream: 'false' },
   defaultHeaders: { 'Cache-Control': 'no-store' }
 })
@@ -126,7 +126,7 @@ async function runWithTimeout<T>(promise: Promise<T>, timeoutMs: number): Promis
 }
 
 async function runOrchestrator(context: string, preferences: string[], constraints: string[]) {
-  const timeout = 45000 // 45 seconds for orchestrator
+  const timeout = 30000 // 30 seconds for orchestrator
   const startTime = Date.now()
   try {
     console.log('Orchestrator started:', new Date().toISOString())
@@ -136,7 +136,7 @@ async function runOrchestrator(context: string, preferences: string[], constrain
         messages: [
           {
             role: 'system',
-            content: 'You are an orchestrator that breaks down complex decisions into specialized analyses.',
+            content: 'You are an orchestrator that breaks down complex decisions into specialized analyses. Be concise.',
           },
           {
             role: 'user',
@@ -160,7 +160,7 @@ async function runOrchestrator(context: string, preferences: string[], constrain
 }
 
 async function runWorker(context: string, preferences: string[], constraints: string[], taskType: string, taskDescription: string) {
-  const timeout = 90000 // 90 seconds for worker tasks
+  const timeout = 60000 // 60 seconds for worker tasks
   const startTime = Date.now()
   try {
     console.log(`Worker ${taskType} started:`, new Date().toISOString())
@@ -170,7 +170,7 @@ async function runWorker(context: string, preferences: string[], constraints: st
         messages: [
           {
             role: 'system',
-            content: `You are a specialized decision analyst focusing on ${taskType}.`,
+            content: `You are a specialized decision analyst focusing on ${taskType}. Be concise and direct.`,
           },
           {
             role: 'user',
@@ -194,7 +194,7 @@ async function runWorker(context: string, preferences: string[], constraints: st
 }
 
 async function synthesizeOutputs(context: string, workerOutputs: any[]) {
-  const timeout = 45000 // 45 seconds for synthesis (reduced from 60)
+  const timeout = 30000 // 30 seconds for synthesis
   const startTime = Date.now()
   try {
     console.log('Synthesis started:', new Date().toISOString(), `with ${workerOutputs.length} workers`)
@@ -204,7 +204,7 @@ async function synthesizeOutputs(context: string, workerOutputs: any[]) {
         messages: [
           {
             role: 'system',
-            content: 'You are a synthesis expert combining multiple specialized analyses into coherent recommendations. Provide concise recommendations based on available data.',
+            content: 'You are a synthesis expert. Provide very concise recommendations based on available analyses.',
           },
           {
             role: 'user',
@@ -261,15 +261,15 @@ export async function POST(req: Request) {
     // Run workers in parallel with a global timeout
     const workerOutputs = await runWithTimeout(
       Promise.all(workerPromises),
-      180000 // 3 minutes global timeout for all workers (reduced from 4 minutes)
+      90000 // 90 seconds global timeout for all workers
     )
 
-    // Filter out failed workers and proceed if at least 2 succeeded
+    // Filter out failed workers and proceed with any successful ones
     const successfulOutputs = workerOutputs.filter(w => w.output !== null)
     console.log(`${successfulOutputs.length}/${tasks.length} workers completed successfully`)
 
-    if (successfulOutputs.length < 2) {
-      throw new Error('Not enough workers completed successfully. Need at least 2 workers.')
+    if (successfulOutputs.length < 1) {
+      throw new Error('No workers completed successfully.')
     }
 
     // Start synthesis immediately with available results
@@ -309,10 +309,10 @@ export async function POST(req: Request) {
       { 
         error: error.message || 'An unexpected error occurred',
         duration,
-        timeoutThreshold: 300000,
-        stage: duration < 45000 ? 'orchestrator' :
-               duration < 180000 ? 'workers' : // Updated to match new worker timeout
-               duration < 225000 ? 'synthesis' : 'unknown',
+        timeoutThreshold: 180000, // Updated to match new maxDuration
+        stage: duration < 30000 ? 'orchestrator' :
+               duration < 90000 ? 'workers' :
+               duration < 120000 ? 'synthesis' : 'unknown',
         details: error instanceof z.ZodError ? error.errors : undefined
       },
       { status: error instanceof z.ZodError ? 400 : error.status || 500 }
