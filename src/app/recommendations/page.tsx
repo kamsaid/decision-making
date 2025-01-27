@@ -26,7 +26,7 @@ function RecommendationsContent() {
   // Fetch recommendations on component mount
   useEffect(() => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 
     const fetchRecommendations = async () => {
       try {
@@ -48,10 +48,17 @@ function RecommendationsContent() {
         })
 
         if (!response.ok) {
-          if (response.status === 504) {
-            throw new Error('Request timed out. Please try again.')
+          // Check for specific error responses
+          try {
+            const errorData = await response.json()
+            throw new Error(errorData.error || `Failed to fetch recommendations: ${response.statusText}`)
+          } catch (jsonError) {
+            // If we can't parse the error response, use the status text
+            if (response.status === 504) {
+              throw new Error('The request took too long to process. Please try again with a simpler query.')
+            }
+            throw new Error(`Failed to fetch recommendations: ${response.statusText}`)
           }
-          throw new Error(`Failed to fetch recommendations: ${response.statusText}`)
         }
 
         let data;
@@ -62,12 +69,16 @@ function RecommendationsContent() {
           throw new Error('Invalid response from server. Please try again.')
         }
 
+        if (!data || !Array.isArray(data)) {
+          throw new Error('Invalid response format. Please try again.')
+        }
+
         setRecommendations(data)
       } catch (err: unknown) {
         console.error('Fetch Error:', err)
         if (err instanceof Error) {
           if (err.name === 'AbortError') {
-            setError('Request took too long. Please try again.')
+            setError('The request took too long. Please try simplifying your query or try again later.')
           } else {
             setError(err.message)
           }
@@ -94,13 +105,23 @@ function RecommendationsContent() {
       {isLoading && (
         <div className="flex justify-center items-center min-h-[200px]">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-current border-t-transparent text-blue-600 dark:text-blue-400" />
+          <p className="ml-3 text-neutral-600 dark:text-neutral-400">
+            Analyzing your request... This may take a minute.
+          </p>
         </div>
       )}
 
       {/* Error State */}
       {error && (
         <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-400 text-center">
-          {error}
+          <p className="font-medium mb-2">Error</p>
+          <p>{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-red-100 dark:bg-red-900/20 rounded-md hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       )}
 
