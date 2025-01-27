@@ -11,9 +11,9 @@ import { z } from 'zod'
 const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY || '',
   baseURL: 'https://api.deepseek.com/v1',
-  timeout: 280000,
-  maxRetries: 3,
-  defaultQuery: { stream: 'false' }, // Fix type error by making stream value a string
+  timeout: 290000, // Increased slightly to allow for retries
+  maxRetries: 2,   // Reduced retries to save time
+  defaultQuery: { stream: 'false' },
   defaultHeaders: { 'Cache-Control': 'no-store' }
 })
 
@@ -120,6 +120,7 @@ async function runWithTimeout<T>(promise: Promise<T>, timeoutMs: number): Promis
 }
 
 async function runOrchestrator(context: string, preferences: string[], constraints: string[]) {
+  const timeout = 60000 // 60 seconds for orchestrator
   try {
     const completion = await runWithTimeout(
       deepseek.chat.completions.create({
@@ -137,7 +138,7 @@ async function runOrchestrator(context: string, preferences: string[], constrain
         temperature: 0.7,
         response_format: { type: 'json_object' },
       }),
-      270000// 50 second timeout
+      timeout
     );
 
     const content = completion.choices[0].message.content
@@ -150,6 +151,7 @@ async function runOrchestrator(context: string, preferences: string[], constrain
 }
 
 async function runWorker(context: string, preferences: string[], constraints: string[], taskType: string, taskDescription: string) {
+  const timeout = 120000 // 120 seconds for worker tasks
   try {
     const completion = await runWithTimeout(
       deepseek.chat.completions.create({
@@ -167,7 +169,7 @@ async function runWorker(context: string, preferences: string[], constraints: st
         temperature: 0.7,
         response_format: { type: 'json_object' },
       }),
-      270000 // 50 second timeout
+      timeout
     );
 
     const content = completion.choices[0].message.content
@@ -180,6 +182,7 @@ async function runWorker(context: string, preferences: string[], constraints: st
 }
 
 async function synthesizeOutputs(context: string, workerOutputs: any[]) {
+  const timeout = 90000 // 90 seconds for synthesis
   try {
     const completion = await runWithTimeout(
       deepseek.chat.completions.create({
@@ -197,7 +200,7 @@ async function synthesizeOutputs(context: string, workerOutputs: any[]) {
         temperature: 0.5,
         response_format: { type: 'json_object' },
       }),
-      270000// 50 second timeout
+      timeout
     );
 
     const content = completion.choices[0].message.content
@@ -209,95 +212,31 @@ async function synthesizeOutputs(context: string, workerOutputs: any[]) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json()
+    const body = await req.json()
     const { context, preferences, constraints } = RequestSchema.parse(body)
 
-    if (!process.env.DEEPSEEK_API_KEY) {
-      return NextResponse.json(
-        { error: 'API key not configured' },
-        { status: 500 }
-      )
-    }
-
-    // Get task breakdown from orchestrator
+    // Run orchestrator
     const orchestratorOutput = await runOrchestrator(context, preferences, constraints)
-    const { tasks } = orchestratorOutput
+    const tasks = TaskListSchema.parse(orchestratorOutput).tasks
 
-    // Run specialized workers in parallel with a timeout
-    const workerPromises = tasks.map((task: { type: string; description: string }) => 
-      runWorker(context, preferences, constraints, task.type, task.description)
-    )
-    
+    // Run workers in parallel instead of sequentially
     const workerOutputs = await Promise.all(
-      workerPromises.map((promise: Promise<any>) => 
-        promise.catch((error: Error) => {
-          console.error('Worker failed:', error)
-          return null
-        })
+      tasks.map(task => 
+        runWorker(context, preferences, constraints, task.type, task.description)
       )
-    ).then(results => results.filter(result => result !== null))
+    )
 
-    if (workerOutputs.length === 0) {
-      throw new Error('All analysis tasks failed. Please try again with a simpler query.')
-    }
+    // Synthesize results
+    const finalOutput = await synthesizeOutputs(context, workerOutputs)
 
-    // Synthesize worker outputs into final recommendation
-    const synthesisOutput = await synthesizeOutputs(context, workerOutputs)
-    
-    // Prepare the API response
-    const response = {
-      analysis: orchestratorOutput,
-      finalRecommendation: synthesisOutput,
-    }
-
-    // Validate the response
-    ApiResponseSchema.parse(response)
-    
-    return NextResponse.json(response)
-
-  } catch (error) {
-    console.error('Error in recommendations API:', error)
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid request format', details: error.errors },
-        { status: 400 }
-      )
-    }
-
-    if (error instanceof OpenAI.APIError) {
-      const status = error.status || 500
-      let message = 'AI service error'
-      
-      if (status === 429) {
-        message = 'Too many requests. Please try again later.'
-      } else if (status === 504 || error.message.includes('timeout')) {
-        message = 'The request took too long. Please try again with a simpler query.'
-      } else {
-        message = `AI service error: ${error.message}`
-      }
-      
-      return NextResponse.json({ error: message }, { status })
-    }
-
-    const isTimeout = error instanceof Error && 
-      (error.message.includes('timeout') || error.message.includes('timed out'))
-
-    if (isTimeout) {
-      return NextResponse.json(
-        { error: 'The request took too long to process. Please try again with a simpler query.' },
-        { status: 504 }
-      )
-    }
-
+    return NextResponse.json(finalOutput)
+  } catch (error: any) {
+    console.error('API error:', error)
     return NextResponse.json(
-      { 
-        error: 'Failed to generate recommendations. Please try again.',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
+      { error: error.message || 'An unexpected error occurred' },
+      { status: error.status || 500 }
     )
   }
 }
