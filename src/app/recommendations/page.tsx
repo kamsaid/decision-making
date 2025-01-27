@@ -63,12 +63,16 @@ function RecommendationsContent() {
         }
 
         setRecommendations(data)
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Fetch Error:', err)
-        if (err.name === 'AbortError') {
-          setError('Request took too long. Please try again.')
+        if (err instanceof Error) {
+          if (err.name === 'AbortError') {
+            setError('Request took too long. Please try again.')
+          } else {
+            setError(err.message)
+          }
         } else {
-          setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.')
+          setError('An unexpected error occurred. Please try again.')
         }
       } finally {
         setIsLoading(false)
