@@ -194,17 +194,17 @@ async function runWorker(context: string, preferences: string[], constraints: st
 }
 
 async function synthesizeOutputs(context: string, workerOutputs: any[]) {
-  const timeout = 60000 // 60 seconds for synthesis
+  const timeout = 45000 // 45 seconds for synthesis (reduced from 60)
   const startTime = Date.now()
   try {
-    console.log('Synthesis started:', new Date().toISOString())
+    console.log('Synthesis started:', new Date().toISOString(), `with ${workerOutputs.length} workers`)
     const completion = await runWithTimeout(
       deepseek.chat.completions.create({
         model: 'deepseek-chat',
         messages: [
           {
             role: 'system',
-            content: 'You are a synthesis expert combining multiple specialized analyses into coherent recommendations. Some analyses might be missing due to timeouts, but provide the best recommendation with available data.',
+            content: 'You are a synthesis expert combining multiple specialized analyses into coherent recommendations. Provide concise recommendations based on available data.',
           },
           {
             role: 'user',
@@ -261,18 +261,18 @@ export async function POST(req: Request) {
     // Run workers in parallel with a global timeout
     const workerOutputs = await runWithTimeout(
       Promise.all(workerPromises),
-      240000 // 4 minutes global timeout for all workers
+      180000 // 3 minutes global timeout for all workers (reduced from 4 minutes)
     )
 
-    // Filter out failed workers but continue if at least one succeeded
+    // Filter out failed workers and proceed if at least 2 succeeded
     const successfulOutputs = workerOutputs.filter(w => w.output !== null)
     console.log(`${successfulOutputs.length}/${tasks.length} workers completed successfully`)
 
-    if (successfulOutputs.length === 0) {
-      throw new Error('All workers failed. Please try again.')
+    if (successfulOutputs.length < 2) {
+      throw new Error('Not enough workers completed successfully. Need at least 2 workers.')
     }
 
-    // Start synthesis immediately after workers complete
+    // Start synthesis immediately with available results
     console.log('Starting synthesis')
     const finalRecommendation = await synthesizeOutputs(
       context, 
@@ -311,8 +311,8 @@ export async function POST(req: Request) {
         duration,
         timeoutThreshold: 300000,
         stage: duration < 45000 ? 'orchestrator' :
-               duration < 240000 ? 'workers' :
-               duration < 270000 ? 'synthesis' : 'unknown',
+               duration < 180000 ? 'workers' : // Updated to match new worker timeout
+               duration < 225000 ? 'synthesis' : 'unknown',
         details: error instanceof z.ZodError ? error.errors : undefined
       },
       { status: error instanceof z.ZodError ? 400 : error.status || 500 }
