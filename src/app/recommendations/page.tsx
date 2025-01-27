@@ -25,6 +25,9 @@ function RecommendationsContent() {
 
   // Fetch recommendations on component mount
   useEffect(() => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
     const fetchRecommendations = async () => {
       try {
         const context = searchParams.get('context')
@@ -41,22 +44,44 @@ function RecommendationsContent() {
             preferences,
             constraints,
           }),
+          signal: controller.signal
         })
 
         if (!response.ok) {
-          throw new Error('Failed to fetch recommendations')
+          if (response.status === 504) {
+            throw new Error('Request timed out. Please try again.')
+          }
+          throw new Error(`Failed to fetch recommendations: ${response.statusText}`)
         }
 
-        const data = await response.json()
+        let data;
+        try {
+          data = await response.json()
+        } catch (jsonError) {
+          console.error('JSON Parse Error:', jsonError)
+          throw new Error('Invalid response from server. Please try again.')
+        }
+
         setRecommendations(data)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
+        console.error('Fetch Error:', err)
+        if (err.name === 'AbortError') {
+          setError('Request took too long. Please try again.')
+        } else {
+          setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.')
+        }
       } finally {
         setIsLoading(false)
+        clearTimeout(timeoutId)
       }
     }
 
     fetchRecommendations()
+
+    return () => {
+      controller.abort()
+      clearTimeout(timeoutId)
+    }
   }, [searchParams])
 
   return (
