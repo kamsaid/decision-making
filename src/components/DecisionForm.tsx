@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { DecisionFormUI } from '@/components/ui/decision-form'
+import { Chat } from '@/components/ui/chat'
 
 // Interface for form data
 interface FormData {
@@ -35,6 +36,12 @@ interface ApiResponse {
   finalRecommendation: FinalRecommendation
 }
 
+// Add new interface for chat messages after other interfaces
+interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
 // DecisionForm component that handles the business logic
 export default function DecisionForm() {
   const [isLoading, setIsLoading] = useState(false)
@@ -43,6 +50,8 @@ export default function DecisionForm() {
   const [currentContext, setCurrentContext] = useState<FormData | null>(null)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [finalRecommendation, setFinalRecommendation] = useState<FinalRecommendation | null>(null)
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [isChatLoading, setIsChatLoading] = useState(false)
 
   // Handle form submission
   const handleSubmit = async (formData: FormData) => {
@@ -91,6 +100,50 @@ export default function DecisionForm() {
       setError(error instanceof Error ? error.message : 'An unexpected error occurred')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // Add new function for handling chat messages
+  const handleSendMessage = async (message: string) => {
+    if (!currentContext) return
+
+    setIsChatLoading(true)
+    const newUserMessage: ChatMessage = { role: 'user', content: message }
+    const newMessages = [...chatMessages, newUserMessage]
+    setChatMessages(newMessages)
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message,
+          context: currentContext.context,
+          preferences: currentContext.preferences,
+          constraints: currentContext.constraints,
+          previousMessages: chatMessages,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || 
+          (data.details && JSON.stringify(data.details)) || 
+          'Failed to get response'
+        )
+      }
+
+      const assistantMessage: ChatMessage = { role: 'assistant', content: data.message }
+      setChatMessages([...newMessages, assistantMessage])
+    } catch (error) {
+      console.error('Chat error:', error)
+      setError(error instanceof Error ? error.message : 'Failed to send message')
+    } finally {
+      setIsChatLoading(false)
     }
   }
 
@@ -173,32 +226,50 @@ export default function DecisionForm() {
 
           {/* Final Recommendation */}
           {!isLoading && finalRecommendation && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-semibold text-neutral-800 dark:text-neutral-200">
-                Final Recommendation
-              </h2>
-              <div className="bg-white dark:bg-black rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800 p-6 space-y-6">
-                <div>
-                  <p className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
-                    {finalRecommendation.summary}
-                  </p>
-                  <p className="text-neutral-600 dark:text-neutral-400">
-                    {finalRecommendation.reasoning}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-3">Key Points</h3>
-                  <ul className="space-y-2">
-                    {finalRecommendation.keyPoints.map((point, index) => (
-                      <li key={index} className="flex items-start space-x-2">
-                        <span className="text-emerald-500 dark:text-emerald-400">•</span>
-                        <span className="text-neutral-600 dark:text-neutral-400">{point}</span>
-                      </li>
-                    ))}
-                  </ul>
+            <>
+              <div className="space-y-6">
+                <h2 className="text-2xl font-semibold text-neutral-800 dark:text-neutral-200">
+                  Final Recommendation
+                </h2>
+                <div className="bg-white dark:bg-black rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800 p-6 space-y-6">
+                  <div>
+                    <p className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                      {finalRecommendation.summary}
+                    </p>
+                    <p className="text-neutral-600 dark:text-neutral-400">
+                      {finalRecommendation.reasoning}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-3">Key Points</h3>
+                    <ul className="space-y-2">
+                      {finalRecommendation.keyPoints.map((point, index) => (
+                        <li key={index} className="flex items-start space-x-2">
+                          <span className="text-emerald-500 dark:text-emerald-400">•</span>
+                          <span className="text-neutral-600 dark:text-neutral-400">{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
+
+              {/* Chat Section */}
+              <div className="space-y-4">
+                <h2 className="text-2xl font-semibold text-neutral-800 dark:text-neutral-200">
+                  Need More Insights?
+                </h2>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  Chat with me to explore your decision further or get clarification on any aspects.
+                </p>
+                <Chat
+                  decisionContext={currentContext?.context || ''}
+                  onSendMessage={handleSendMessage}
+                  messages={chatMessages}
+                  isLoading={isChatLoading}
+                />
+              </div>
+            </>
           )}
 
           {/* No Recommendations State */}
