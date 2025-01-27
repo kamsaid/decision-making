@@ -1,5 +1,6 @@
 export const maxDuration = 300 // 5 minute timeout
 export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { z } from 'zod'
