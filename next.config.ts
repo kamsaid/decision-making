@@ -12,8 +12,16 @@ const nextConfig = {
     ]
   },
   experimental: {
-    serverActions: true,
-  },
+    serverActions: {
+      bodySizeLimit: '50mb'
+    },
+    turbo: {
+      rules: {
+        // Configure external packages for edge runtime
+        externals: ['openai']
+      }
+    }
+  }
 };
 
 export default nextConfig;

@@ -1,13 +1,14 @@
-export const maxDuration = 300 // 5 minute timeout
+export const maxDuration = 300 // 5 minute timeout for Pro plan
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { z } from 'zod'
 
 
 const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY,
+  apiKey: process.env.DEEPSEEK_API_KEY || '',
   baseURL: 'https://api.deepseek.com/v1',
   timeout: 50000, // 50 second timeout for individual API calls
 })
