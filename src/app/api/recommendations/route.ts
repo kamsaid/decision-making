@@ -11,7 +11,10 @@ import { z } from 'zod'
 const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY || '',
   baseURL: 'https://api.deepseek.com/v1',
-  timeout: 50000, // 50 second timeout for individual API calls
+  timeout: 280000,
+  maxRetries: 3,
+  defaultQuery: { stream: 'false' }, // Fix type error by making stream value a string
+  defaultHeaders: { 'Cache-Control': 'no-store' }
 })
 
 const RequestSchema = z.object({
@@ -134,7 +137,7 @@ async function runOrchestrator(context: string, preferences: string[], constrain
         temperature: 0.7,
         response_format: { type: 'json_object' },
       }),
-      50000 // 50 second timeout
+      270000// 50 second timeout
     );
 
     const content = completion.choices[0].message.content
@@ -164,7 +167,7 @@ async function runWorker(context: string, preferences: string[], constraints: st
         temperature: 0.7,
         response_format: { type: 'json_object' },
       }),
-      50000 // 50 second timeout
+      270000 // 50 second timeout
     );
 
     const content = completion.choices[0].message.content
@@ -194,7 +197,7 @@ async function synthesizeOutputs(context: string, workerOutputs: any[]) {
         temperature: 0.5,
         response_format: { type: 'json_object' },
       }),
-      50000 // 50 second timeout
+      270000// 50 second timeout
     );
 
     const content = completion.choices[0].message.content
