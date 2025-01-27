@@ -5,16 +5,12 @@ const nextConfig = {
       {
         source: '/api/:path*',
         headers: [
-          { key: 'Cache-Control', value: 'no-store' }
+          { key: 'Cache-Control', value: 'no-store' },
+          { key: 'Content-Type', value: 'application/json' }
         ],
       },
     ]
-  },
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '50mb'
-    }
   }
- };
- 
- module.exports = nextConfig;
+};
+
+module.exports = nextConfig;

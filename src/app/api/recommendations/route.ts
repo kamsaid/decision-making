@@ -1,6 +1,9 @@
+export const maxDuration = 300 // 5 minute timeout
+export const runtime = 'edge'
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { z } from 'zod'
+
 
 const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY,
