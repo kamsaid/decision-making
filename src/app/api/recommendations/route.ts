@@ -149,10 +149,19 @@ export async function POST(req: Request) {
 
     // Synthesis
     console.log('Starting synthesis')
-    const finalOutput = await synthesizeOutputs(context, workerOutputs)
+    const finalRecommendation = await synthesizeOutputs(context, workerOutputs)
     console.log('Synthesis complete:', Date.now() - startTime, 'ms')
 
-    return NextResponse.json(finalOutput)
+    // Prepare the API response in the expected format
+    const response = {
+      analysis: orchestratorOutput,
+      finalRecommendation
+    }
+
+    // Validate the response format
+    ApiResponseSchema.parse(response)
+
+    return NextResponse.json(response)
   } catch (error: any) {
     const duration = Date.now() - startTime
     console.error('API error after', duration, 'ms:', error)
