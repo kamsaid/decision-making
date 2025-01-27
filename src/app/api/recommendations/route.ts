@@ -119,9 +119,62 @@ async function runWithTimeout<T>(promise: Promise<T>, timeoutMs: number): Promis
   return Promise.race([promise, timeout]);
 }
 
+export async function POST(req: Request) {
+  const startTime = Date.now()
+  try {
+    console.log('API Start:', new Date().toISOString())
+    
+    const body = await req.json()
+    const { context, preferences, constraints } = RequestSchema.parse(body)
+    console.log('Request parsed:', Date.now() - startTime, 'ms')
+
+    // Run orchestrator
+    console.log('Starting orchestrator')
+    const orchestratorOutput = await runOrchestrator(context, preferences, constraints)
+    console.log('Orchestrator complete:', Date.now() - startTime, 'ms')
+    
+    const tasks = TaskListSchema.parse(orchestratorOutput).tasks
+    console.log(`Starting ${tasks.length} workers in parallel`)
+    
+    // Run workers in parallel
+    const workerOutputs = await Promise.all(
+      tasks.map(async (task, index) => {
+        const workerStart = Date.now()
+        const result = await runWorker(context, preferences, constraints, task.type, task.description)
+        console.log(`Worker ${index + 1} complete:`, Date.now() - workerStart, 'ms')
+        return result
+      })
+    )
+    console.log('All workers complete:', Date.now() - startTime, 'ms')
+
+    // Synthesis
+    console.log('Starting synthesis')
+    const finalOutput = await synthesizeOutputs(context, workerOutputs)
+    console.log('Synthesis complete:', Date.now() - startTime, 'ms')
+
+    return NextResponse.json(finalOutput)
+  } catch (error: any) {
+    const duration = Date.now() - startTime
+    console.error('API error after', duration, 'ms:', error)
+    return NextResponse.json(
+      { 
+        error: error.message || 'An unexpected error occurred', 
+        duration,
+        timeoutThreshold: 300000,
+        stage: duration < 60000 ? 'orchestrator' :
+               duration < 180000 ? 'workers' :
+               duration < 270000 ? 'synthesis' : 'unknown'
+      },
+      { status: error.status || 500 }
+    )
+  }
+}
+
 async function runOrchestrator(context: string, preferences: string[], constraints: string[]) {
   const timeout = 60000 // 60 seconds for orchestrator
+  const startTime = Date.now()
   try {
+    console.log('Orchestrator started:', new Date().toISOString())
     const completion = await runWithTimeout(
       deepseek.chat.completions.create({
         model: 'deepseek-chat',
@@ -140,19 +193,22 @@ async function runOrchestrator(context: string, preferences: string[], constrain
       }),
       timeout
     );
+    console.log('Orchestrator API call complete:', Date.now() - startTime, 'ms')
 
     const content = completion.choices[0].message.content
     if (!content) throw new Error('No content in orchestrator response')
     return JSON.parse(content)
   } catch (error) {
-    console.error('Orchestrator error:', error)
+    console.error('Orchestrator error after', Date.now() - startTime, 'ms:', error)
     throw new Error('Failed to analyze decision context. Please try again.')
   }
 }
 
 async function runWorker(context: string, preferences: string[], constraints: string[], taskType: string, taskDescription: string) {
   const timeout = 120000 // 120 seconds for worker tasks
+  const startTime = Date.now()
   try {
+    console.log(`Worker ${taskType} started:`, new Date().toISOString())
     const completion = await runWithTimeout(
       deepseek.chat.completions.create({
         model: 'deepseek-chat',
@@ -171,19 +227,22 @@ async function runWorker(context: string, preferences: string[], constraints: st
       }),
       timeout
     );
+    console.log(`Worker ${taskType} API call complete:`, Date.now() - startTime, 'ms')
 
     const content = completion.choices[0].message.content
     if (!content) throw new Error('No content in worker response')
     return JSON.parse(content)
   } catch (error) {
-    console.error('Worker error:', error)
+    console.error(`Worker ${taskType} error after`, Date.now() - startTime, 'ms:', error)
     throw new Error(`Failed to analyze ${taskType}. Please try again.`)
   }
 }
 
 async function synthesizeOutputs(context: string, workerOutputs: any[]) {
   const timeout = 90000 // 90 seconds for synthesis
+  const startTime = Date.now()
   try {
+    console.log('Synthesis started:', new Date().toISOString())
     const completion = await runWithTimeout(
       deepseek.chat.completions.create({
         model: 'deepseek-chat',
@@ -202,41 +261,13 @@ async function synthesizeOutputs(context: string, workerOutputs: any[]) {
       }),
       timeout
     );
+    console.log('Synthesis API call complete:', Date.now() - startTime, 'ms')
 
     const content = completion.choices[0].message.content
     if (!content) throw new Error('No content in synthesis response')
     return JSON.parse(content)
   } catch (error) {
-    console.error('Synthesis error:', error)
+    console.error('Synthesis error after', Date.now() - startTime, 'ms:', error)
     throw new Error('Failed to synthesize recommendations. Please try again.')
-  }
-}
-
-export async function POST(req: Request) {
-  try {
-    const body = await req.json()
-    const { context, preferences, constraints } = RequestSchema.parse(body)
-
-    // Run orchestrator
-    const orchestratorOutput = await runOrchestrator(context, preferences, constraints)
-    const tasks = TaskListSchema.parse(orchestratorOutput).tasks
-
-    // Run workers in parallel instead of sequentially
-    const workerOutputs = await Promise.all(
-      tasks.map(task => 
-        runWorker(context, preferences, constraints, task.type, task.description)
-      )
-    )
-
-    // Synthesize results
-    const finalOutput = await synthesizeOutputs(context, workerOutputs)
-
-    return NextResponse.json(finalOutput)
-  } catch (error: any) {
-    console.error('API error:', error)
-    return NextResponse.json(
-      { error: error.message || 'An unexpected error occurred' },
-      { status: error.status || 500 }
-    )
   }
 }
