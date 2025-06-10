@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { z } from 'zod'
 
-const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY,
-  baseURL: 'https://api.deepseek.com/v1',
+// Initialize OpenAI client with official OpenAI API
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 })
 
 const RequestSchema = z.object({
@@ -18,29 +18,39 @@ const RequestSchema = z.object({
   })),
 })
 
+/**
+ * Returns the system-level instructions for the decision-assistant LLM.
+ * Inject this into the first message of every new chat.
+ */
 function buildSystemMessage(context: string, preferences: string[], constraints: string[]) {
-  return `You are having a natural, friendly conversation about a decision regarding:
+  return `
+You are **Clarity**, a warm but incisive decision-making coach powered by advanced reasoning models.
+Your single goal: help the user arrive at a confident, informed decision.
 
-${context}
+================ USER SITUATION ================
+• Decision: ${context}
+• Preferences: ${preferences.join(" | ")}
+• Constraints: ${constraints.join(" | ")}
 
-Keep in mind these preferences and constraints, but discuss them naturally:
-Preferences: ${preferences.join(', ')}
-Constraints: ${constraints.join(', ')}
+================ GUIDING PRINCIPLES ================
+1. **Empathize first** – reflect the user's feelings in 1-2 sentences before advising.
+2. **Clarify** – if critical info is missing, ask a *single* concise follow-up.
+3. **Focus** – surface at most the *three* highest-impact considerations.
+4. **Reason transparently** – share a brief "why this matters" for each point.
+5. **Action over abstraction** – end with one clear next step the user can do today.
+6. **Brevity** – aim for ≤ 250 words unless the user asks for depth.
+7. **Tone** – conversational, like a trusted friend who knows decision science.
+8. **No formatting clutter** – avoid bullet lists, headers, or markdown; flow naturally.
+9. **Safety & accuracy** – no legal, medical, or financial absolutes; use cautious language.
 
-Important guidelines for your responses:
-- Keep responses concise and conversational, like a knowledgeable friend giving advice
-- Avoid using markdown, bullet points, or formal structuring
-- Don't use section headers or elaborate formatting
-- Present information in a flowing, natural way
-- Focus on 2-3 key points rather than exhaustive lists
-- Use everyday language while maintaining expertise
-- Keep responses to 2-3 short paragraphs when possible
-- Ask simple follow-up questions when needed
+================ OUTPUT TEMPLATE ================
+<Reflection on user emotion>.
+<Key Point 1> – <Why it matters>.
+<Key Point 2> – <Why it matters>.
+<Key Point 3> – <Why it matters>.
+Next step: <one actionable suggestion>.
 
-Example conversation style:
-"I see what you're asking about. Based on your situation, I think the most important thing to consider is [key point]. This matters because [brief explanation]. Another crucial factor is [second point]. What are your thoughts on that?"
-
-Remember to maintain a natural flow while drawing on your decision-making expertise.`
+===============================================`;
 }
 
 export async function POST(request: Request) {
@@ -48,7 +58,8 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { message, context, preferences, constraints, previousMessages } = RequestSchema.parse(body)
 
-    if (!process.env.DEEPSEEK_API_KEY) {
+    // Check for OpenAI API key configuration
+    if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
     }
 
@@ -61,8 +72,9 @@ export async function POST(request: Request) {
       { role: 'user', content: message }
     ]
 
-    const completion = await deepseek.chat.completions.create({
-      model: 'deepseek-chat',
+    // Use OpenAI's GPT-4 model for chat completions
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
       messages: messages as any[],
       temperature: 0.7,
       max_tokens: 400, // Limiting token length to encourage conciseness

@@ -13,9 +13,9 @@ const WORKER_TIMEOUT = 15000
 const SYNTHESIS_TIMEOUT = 15000
 const WORKER_PARALLEL_TIMEOUT = 45000
 
-const deepseek = new OpenAI({
- apiKey: process.env.DEEPSEEK_API_KEY || '',
- baseURL: 'https://api.deepseek.com/v1',
+// Initialize OpenAI client with official OpenAI API
+const openai = new OpenAI({
+ apiKey: process.env.OPENAI_API_KEY || '',
  timeout: 55000,
  maxRetries: 0,
  defaultQuery: { stream: 'false' },
@@ -130,8 +130,9 @@ async function runOrchestrator(context: string, preferences: string[], constrain
  try {
    console.log('Orchestrator started:', new Date().toISOString())
    const completion = await runWithTimeout(
-     deepseek.chat.completions.create({
-       model: 'deepseek-chat',
+     // Use OpenAI's GPT-4o model for orchestrator analysis (supports JSON mode)
+     openai.chat.completions.create({
+       model: 'gpt-4o',
        messages: [
          {
            role: 'system',
@@ -163,8 +164,9 @@ async function runWorker(context: string, preferences: string[], constraints: st
  try {
    console.log(`Worker ${taskType} started:`, new Date().toISOString())
    const completion = await runWithTimeout(
-     deepseek.chat.completions.create({
-       model: 'deepseek-chat',
+     // Use OpenAI's GPT-4o model for worker analysis (supports JSON mode)
+     openai.chat.completions.create({
+       model: 'gpt-4o',
        messages: [
          {
            role: 'system',
@@ -196,8 +198,9 @@ async function synthesizeOutputs(context: string, workerOutputs: any[]) {
  try {
    console.log('Synthesis started:', new Date().toISOString())
    const completion = await runWithTimeout(
-     deepseek.chat.completions.create({
-       model: 'deepseek-chat',
+     // Use OpenAI's GPT-4o model for synthesis (supports JSON mode)
+     openai.chat.completions.create({
+       model: 'gpt-4o',
        messages: [
          {
            role: 'system',
@@ -230,7 +233,8 @@ export async function POST(req: Request) {
    const body = await req.json()
    const { context, preferences, constraints } = RequestSchema.parse(body)
 
-   if (!process.env.DEEPSEEK_API_KEY) {
+   // Check for OpenAI API key configuration
+   if (!process.env.OPENAI_API_KEY) {
      throw new Error('API key not configured')
    }
 

@@ -1,35 +1,30 @@
 # Decision Making Assistant
 
-A Next.js application that helps users make better decisions by analyzing their preferences, constraints, and goals using AI-powered recommendations.
+A Next.js application that helps you make better decisions through AI-powered analysis and recommendations.
 
 ## Features
 
-- Interactive decision form with dynamic fields for preferences and constraints
-- AI-powered recommendations using DeepSeek's reasoning model
-- Detailed recommendations with pros and cons
-- Modern, responsive UI built with Tailwind CSS
+- **Structured Decision Framework**: Input your context, preferences, and constraints
+- AI-powered recommendations using OpenAI's advanced reasoning models
+- **Interactive Chat Interface**: Discuss your decisions with an AI assistant
+- **Multi-faceted Analysis**: Preference analysis, constraint validation, and creative solutions
+- **Real-time Processing**: Get immediate insights and recommendations
 
-## Tech Stack
+## Prerequisites
 
-- Next.js 14
-- TypeScript
-- Tailwind CSS
-- DeepSeek AI API
-- React Query
-- Zod for validation
+Before running this application, make sure you have:
+
+- Node.js 18+ installed
+- npm or yarn package manager
+- OpenAI API key
 
 ## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and npm
-- DeepSeek API key
 
 ### Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/kamsaid/decision-making.git
+git clone <repository-url>
 cd decision-making
 ```
 
@@ -38,14 +33,14 @@ cd decision-making
 npm install
 ```
 
-3. Copy the example environment file and update it with your DeepSeek API key:
+3. Copy the example environment file and update it with your OpenAI API key:
 ```bash
 cp .env.example .env.local
 ```
 
-4. Update `.env.local` with your DeepSeek API key:
-```env
-DEEPSEEK_API_KEY=your_deepseek_api_key_here
+4. Update `.env.local` with your OpenAI API key:
+```
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
 5. Run the development server:
@@ -53,30 +48,65 @@ DEEPSEEK_API_KEY=your_deepseek_api_key_here
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`.
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Usage
+## Project Structure
 
-1. Enter your decision context (e.g., "Should I move to a new city?")
-2. Add your preferences (e.g., "Good weather", "Cultural activities")
-3. Add your constraints (e.g., "Budget under $2000/month")
-4. Submit the form to get AI-powered recommendations
-5. Review the recommendations and their pros/cons
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── chat/          # Chat API endpoint
+│   │   └── recommendations/ # Recommendations API endpoint
+│   ├── recommendations/    # Recommendations page
+│   └── layout.tsx         # Root layout
+├── components/
+│   └── ui/               # Reusable UI components
+└── lib/                  # Utility functions
+```
+
+## API Endpoints
+
+- `POST /api/chat` - Interactive chat with the AI assistant
+- `POST /api/recommendations` - Generate structured recommendations
+
+## Technologies Used
+
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **AI**: OpenAI API
+- **Validation**: Zod
+- **Deployment**: Vercel
+
+## Design Tokens
+
+This application uses the **Duson Color Palette** for a cohesive and accessible design system:
+
+### Color Palette
+- **Base Light**: `#FAF5E6` - Dominant light-mode background (washed ivory)
+- **Base Dark**: `#2D2C2E` - Dominant dark-mode background  
+- **Accent Primary**: `#FD1F4A` - Primary actions, links, highlights (coral pink)
+- **Accent Secondary**: `#FBBD0D` - Secondary accents, badges (golden yellow)
+
+### Semantic Tokens
+- `bg-base` - Light mode background
+- `bg-base-dark` - Dark mode background  
+- `accent-primary` - Primary action color
+- `accent-secondary` - Secondary accent color
+
+### Accessibility
+All color combinations maintain WCAG AA contrast ratios (≥ 4.5:1) for optimal readability. The palette supports both light and dark modes with automatic theme switching.
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Acknowledgments
+---
 
-- Built with Next.js
-- Powered by DeepSeek AI
-- UI components inspired by Tailwind CSS
+**Note**: This application is powered by OpenAI API and requires a valid API key to function.

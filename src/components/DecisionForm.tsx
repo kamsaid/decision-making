@@ -167,7 +167,7 @@ export default function DecisionForm() {
               <h2 className="text-2xl font-semibold text-neutral-800 dark:text-neutral-200">
                 Your Decision Context
               </h2>
-              <div className="bg-white dark:bg-black rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800 p-6">
+              <div className="bg-bg-base/80 dark:bg-bg-base-dark/80 backdrop-blur-md rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800 p-6">
               <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">Your Decision</h3>
                 <p className="text-neutral-600 dark:text-neutral-400">{currentContext.context}</p>
                 {currentContext.preferences.length > 0 && (
@@ -197,7 +197,7 @@ export default function DecisionForm() {
           {/* Loading State */}
           {isLoading && (
             <div className="flex justify-center items-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-current border-t-transparent text-blue-600 dark:text-blue-400" />
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-current border-t-transparent text-accent-primary dark:text-accent-primary" />
             </div>
           )}
 
@@ -207,14 +207,14 @@ export default function DecisionForm() {
               <h2 className="text-2xl font-semibold text-neutral-800 dark:text-neutral-200">
                 Thinking Process
               </h2>
-              <div className="bg-white dark:bg-black rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800 p-6">
+              <div className="bg-bg-base/80 dark:bg-bg-base-dark/80 backdrop-blur-md rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800 p-6">
                 <p className="text-neutral-600 dark:text-neutral-400 mb-4">{analysis.analysis}</p>
                 <div className="space-y-4">
                   <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Analysis Steps</h3>
                   <ul className="space-y-2">
                     {analysis.tasks.map((task, index) => (
                       <li key={index} className="flex items-start space-x-2">
-                        <span className="text-blue-500 dark:text-blue-400">•</span>
+                        <span className="text-accent-primary dark:text-accent-primary">•</span>
                         <span className="text-neutral-600 dark:text-neutral-400">{task.description}</span>
                       </li>
                     ))}
@@ -231,7 +231,7 @@ export default function DecisionForm() {
                 <h2 className="text-2xl font-semibold text-neutral-800 dark:text-neutral-200">
                   Final Recommendation
                 </h2>
-                <div className="bg-white dark:bg-black rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800 p-6 space-y-6">
+                <div className="bg-bg-base/80 dark:bg-bg-base-dark/80 backdrop-blur-md rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800 p-6 space-y-6">
                   <div>
                     <p className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
                       {finalRecommendation.summary}
@@ -245,7 +245,7 @@ export default function DecisionForm() {
                     <ul className="space-y-2">
                       {finalRecommendation.keyPoints.map((point, index) => (
                         <li key={index} className="flex items-start space-x-2">
-                          <span className="text-emerald-500 dark:text-emerald-400">•</span>
+                          <span className="text-accent-secondary dark:text-accent-secondary">•</span>
                           <span className="text-neutral-600 dark:text-neutral-400">{point}</span>
                         </li>
                       ))}

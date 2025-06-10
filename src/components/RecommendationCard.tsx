@@ -22,7 +22,7 @@ export default function RecommendationCard({
   const [isExpanded, setIsExpanded] = useState(false)
 
   return (
-    <div className="bg-white dark:bg-black rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden transition-all duration-200 hover:shadow-xl">
+    <div className="bg-bg-base/80 dark:bg-bg-base-dark/80 backdrop-blur-md rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden transition-all duration-200 hover:shadow-xl">
       {/* Card Header */}
       <div className="p-6">
         <div className="flex items-start justify-between">
@@ -59,7 +59,7 @@ export default function RecommendationCard({
                     key={index}
                     className="flex items-start space-x-2"
                   >
-                    <span className="text-emerald-500 dark:text-emerald-400">+</span>
+                    <span className="text-accent-secondary dark:text-accent-secondary">+</span>
                     <span className="text-neutral-600 dark:text-neutral-400">{pro}</span>
                   </li>
                 ))}
@@ -75,7 +75,7 @@ export default function RecommendationCard({
                     key={index}
                     className="flex items-start space-x-2"
                   >
-                    <span className="text-rose-500 dark:text-rose-400">-</span>
+                    <span className="text-accent-primary dark:text-accent-primary">-</span>
                     <span className="text-neutral-600 dark:text-neutral-400">{con}</span>
                   </li>
                 ))}

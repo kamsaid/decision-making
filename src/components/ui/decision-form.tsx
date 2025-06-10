@@ -67,7 +67,7 @@ export function DecisionFormUI({ onSubmit, isLoading, error }: DecisionFormUIPro
   }
 
   return (
-    <div className="max-w-2xl w-full mx-auto rounded-none md:rounded-2xl p-4 md:p-8 shadow-input bg-white dark:bg-black">
+    <div className="max-w-2xl w-full mx-auto rounded-none md:rounded-2xl p-4 md:p-8 shadow-input bg-bg-base/80 dark:bg-bg-base-dark/80 backdrop-blur-md">
       <h2 className="font-bold text-3xl text-neutral-800 dark:text-neutral-200 text-center">
         What decision can I help you with?
       </h2>
@@ -78,7 +78,7 @@ export function DecisionFormUI({ onSubmit, isLoading, error }: DecisionFormUIPro
       <form className="my-8" onSubmit={handleSubmit}>
         {/* Error Message */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          <div className="mb-6 bg-accent-primary/10 border border-accent-primary/30 rounded-lg p-4 text-accent-primary">
             {error}
           </div>
         )}
@@ -120,7 +120,7 @@ export function DecisionFormUI({ onSubmit, isLoading, error }: DecisionFormUIPro
                       <button
                         type="button"
                         onClick={() => handleRemoveField('preferences', index)}
-                        className="p-2 text-red-600 hover:text-red-700"
+                        className="p-2 text-accent-primary hover:text-accent-primary/80"
                       >
                         <Minus className="h-5 w-5" />
                       </button>
@@ -130,7 +130,7 @@ export function DecisionFormUI({ onSubmit, isLoading, error }: DecisionFormUIPro
                 <button
                   type="button"
                   onClick={() => handleAddField('preferences')}
-                  className="mt-2 flex items-center text-sm text-blue-600 hover:text-blue-700"
+                  className="mt-2 flex items-center text-sm text-accent-primary hover:text-accent-primary/80"
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add another preference
@@ -158,7 +158,7 @@ export function DecisionFormUI({ onSubmit, isLoading, error }: DecisionFormUIPro
                       <button
                         type="button"
                         onClick={() => handleRemoveField('constraints', index)}
-                        className="p-2 text-red-600 hover:text-red-700"
+                        className="p-2 text-accent-primary hover:text-accent-primary/80"
                       >
                         <Minus className="h-5 w-5" />
                       </button>
@@ -168,7 +168,7 @@ export function DecisionFormUI({ onSubmit, isLoading, error }: DecisionFormUIPro
                 <button
                   type="button"
                   onClick={() => handleAddField('constraints')}
-                  className="mt-2 flex items-center text-sm text-blue-600 hover:text-blue-700"
+                  className="mt-2 flex items-center text-sm text-accent-primary hover:text-accent-primary/80"
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add another constraint
@@ -182,7 +182,7 @@ export function DecisionFormUI({ onSubmit, isLoading, error }: DecisionFormUIPro
         <button
           type="submit"
           disabled={isLoading}
-          className="mt-8 bg-gradient-to-br relative group/btn from-black dark:from-zinc-900 dark:to-zinc-900 to-neutral-600 block dark:bg-zinc-800 w-full text-white rounded-md h-10 font-medium shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:shadow-[0px_1px_0px_0px_var(--zinc-800)_inset,0px_-1px_0px_0px_var(--zinc-800)_inset]"
+          className="mt-8 bg-gradient-to-br relative group/btn from-accent-primary to-accent-primary/80 block w-full text-white rounded-md h-10 font-medium shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] hover:from-accent-primary/90 hover:to-accent-primary/70 transition-all"
         >
           {isLoading ? (
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent mx-auto" />
@@ -202,8 +202,8 @@ export function DecisionFormUI({ onSubmit, isLoading, error }: DecisionFormUIPro
 const BottomGradient = () => {
   return (
     <>
-      <span className="group-hover/btn:opacity-100 block transition duration-500 opacity-0 absolute h-px w-full -bottom-px inset-x-0 bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
-      <span className="group-hover/btn:opacity-100 blur-sm block transition duration-500 opacity-0 absolute h-px w-1/2 mx-auto -bottom-px inset-x-10 bg-gradient-to-r from-transparent via-indigo-500 to-transparent" />
+      <span className="group-hover/btn:opacity-100 block transition duration-500 opacity-0 absolute h-px w-full -bottom-px inset-x-0 bg-gradient-to-r from-transparent via-accent-secondary to-transparent" />
+      <span className="group-hover/btn:opacity-100 blur-sm block transition duration-500 opacity-0 absolute h-px w-1/2 mx-auto -bottom-px inset-x-10 bg-gradient-to-r from-transparent via-accent-primary to-transparent" />
     </>
   )
 }

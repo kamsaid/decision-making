@@ -40,7 +40,7 @@ export function Chat({ decisionContext, onSendMessage, messages, isLoading }: Ch
   }
 
   return (
-    <div className="flex flex-col h-[400px] bg-white dark:bg-black rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800">
+    <div className="flex flex-col h-[400px] bg-bg-base/80 dark:bg-bg-base-dark/80 backdrop-blur-md rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800">
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message, index) => (
@@ -53,7 +53,7 @@ export function Chat({ decisionContext, onSendMessage, messages, isLoading }: Ch
             <div
               className={`max-w-[80%] rounded-lg px-4 py-2 ${
                 message.role === 'user'
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-accent-primary text-white'
                   : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
               }`}
             >
@@ -86,13 +86,13 @@ export function Chat({ decisionContext, onSendMessage, messages, isLoading }: Ch
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a follow-up question..."
-            className="flex-1 min-w-0 bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 min-w-0 bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary"
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="bg-blue-500 text-white rounded-lg px-4 py-2 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="bg-accent-primary text-white rounded-lg px-4 py-2 hover:bg-accent-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Send className="h-4 w-4" />
           </button>

@@ -4,14 +4,14 @@ import DecisionForm from '@/components/DecisionForm'
 // Home page component
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100 dark:from-black dark:to-neutral-900">
+    <div className="min-h-screen bg-gradient-to-b from-bg-base/50 to-bg-base dark:from-bg-base-dark/50 dark:to-bg-base-dark">
       <Header />
       
       <main className="max-w-5xl mx-auto px-4 py-12">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <div className="relative">
-            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-r from-transparent via-indigo-500/10 to-transparent blur-2xl" />
+            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-r from-transparent via-accent-primary/10 to-transparent blur-2xl" />
             <h1 className="relative text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-900 to-neutral-600 dark:from-neutral-100 dark:to-neutral-400 mb-4">
               Smarter Choices, Together
             </h1>
