@@ -10,6 +10,22 @@ export default {
   darkMode: "class",
   theme: {
     extend: {
+      // Typography configuration using Inter font
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif'],
+      },
+      // Enhanced typography scale using rem units
+      fontSize: {
+        'xs': ['0.75rem', { lineHeight: '1.625' }],     // 12px - leading-relaxed default
+        'sm': ['0.875rem', { lineHeight: '1.625' }],    // 14px - leading-relaxed default
+        'base': ['1rem', { lineHeight: '1.625' }],      // 16px - leading-relaxed default
+        'lg': ['1.125rem', { lineHeight: '1.625' }],    // 18px - leading-relaxed default
+        'xl': ['1.25rem', { lineHeight: '1.625' }],     // 20px - leading-relaxed default
+        '2xl': ['1.5rem', { lineHeight: '1.625' }],     // 24px - leading-relaxed default
+        '3xl': ['1.875rem', { lineHeight: '1.625' }],   // 30px - leading-relaxed default
+        '4xl': ['2.25rem', { lineHeight: '1.625' }],    // 36px - leading-relaxed default
+        '5xl': ['3rem', { lineHeight: '1.625' }],       // 48px - leading-relaxed default
+      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
