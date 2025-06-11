@@ -28,6 +28,8 @@ interface FinalRecommendation {
   summary: string
   reasoning: string
   keyPoints: string[]
+  nextSteps: string[]
+  resources: string[]
 }
 
 // Interface for API response
@@ -251,6 +253,36 @@ export default function DecisionForm() {
                       ))}
                     </ul>
                   </div>
+                  
+                  {/* Add Next Steps section */}
+                  {finalRecommendation.nextSteps && finalRecommendation.nextSteps.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-3">Next Steps</h3>
+                      <ul className="space-y-2">
+                        {finalRecommendation.nextSteps.map((step, index) => (
+                          <li key={index} className="flex items-start space-x-2">
+                            <span className="text-accent-primary dark:text-accent-primary font-medium">{index + 1}.</span>
+                            <span className="text-neutral-600 dark:text-neutral-400">{step}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {/* Add Resources section */}
+                  {finalRecommendation.resources && finalRecommendation.resources.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-3">Recommended Resources</h3>
+                      <ul className="space-y-2">
+                        {finalRecommendation.resources.map((resource, index) => (
+                          <li key={index} className="flex items-start space-x-2">
+                            <span className="text-accent-secondary dark:text-accent-secondary">📚</span>
+                            <span className="text-neutral-600 dark:text-neutral-400">{resource}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
 

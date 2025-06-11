@@ -11,6 +11,26 @@ jest.mock('lucide-react', () => ({
   Bot: () => null,
 }))
 
+// Mock the DecisionSnapshot component
+jest.mock('@/components/DecisionSnapshot', () => ({
+  __esModule: true,
+  default: function DecisionSnapshot({ decisionContext, onEditClick }: any) {
+    if (!decisionContext?.context) return null
+    return (
+      <div data-testid="decision-snapshot">
+        <div>{decisionContext.context}</div>
+        {decisionContext.preferences?.map((pref: string, i: number) => (
+          <span key={i}>{pref}</span>
+        ))}
+        {decisionContext.constraints?.map((con: string, i: number) => (
+          <span key={i}>{con}</span>
+        ))}
+        {onEditClick && <button onClick={onEditClick}>Edit</button>}
+      </div>
+    )
+  }
+}))
+
 // Framer-motion is ESM-only and includes complex animation logic we don't need
 // in unit tests.  We replace it with a minimal stub that renders plain <div>
 // elements while still forwarding all received props so that the DOM tree

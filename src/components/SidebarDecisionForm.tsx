@@ -15,6 +15,8 @@ interface FinalRecommendation {
   summary: string
   reasoning: string
   keyPoints: string[]
+  nextSteps: string[]
+  resources: string[]
 }
 
 // Interface for the component props

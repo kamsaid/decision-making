@@ -142,12 +142,11 @@ export async function POST(request: Request) {
       { role: 'user', content: message }
     ]
 
-    // Use OpenAI's GPT-4 model for streaming chat completions
+    // Use OpenAI's o3 model for streaming chat completions
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'o3',
       messages: messages as any[],
-      temperature: 0.7,
-      max_tokens: 400, // Limiting token length to encourage conciseness
+      max_completion_tokens: 400, // Limiting token length to encourage conciseness
       stream: true, // Enable streaming for progressive response display
     })
 

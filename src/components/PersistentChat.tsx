@@ -29,11 +29,12 @@ interface PersistentChatProps {
   decisionContext?: DecisionContext | null
   initialRecommendation?: FinalRecommendation | null
   onDecisionContextChange?: (context: DecisionContext | null) => void
+  onSidebarToggle?: () => void
   className?: string
 }
 
 // Persistent chat component that's always visible
-export default function PersistentChat({ decisionContext, initialRecommendation, onDecisionContextChange, className = '' }: PersistentChatProps) {
+export default function PersistentChat({ decisionContext, initialRecommendation, onDecisionContextChange, onSidebarToggle, className = '' }: PersistentChatProps) {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [isChatLoading, setIsChatLoading] = useState(false)
   
@@ -343,12 +344,13 @@ Example: \`/pref affordable price\` or \`/con must be under $500\``
       {/* Chat Component */}
       <div className="flex-1">
         <Chat
-          decisionContext={decisionContext?.context || ''}
+          decisionContext={decisionContext || { context: '' }}
           onSendMessage={handleSendMessage}
           onSlashCommand={handleSlashCommand}
           messages={chatMessages}
           isLoading={isChatLoading}
           onFeedback={handleFeedback}
+          onEditClick={onSidebarToggle}
         />
       </div>
     </div>

@@ -24,6 +24,7 @@ interface FinalRecommendation {
 export default function Home() {
   const [decisionContext, setDecisionContext] = useState<DecisionContext | null>(null)
   const [initialRecommendation, setInitialRecommendation] = useState<FinalRecommendation | null>(null)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true) // New state for sidebar control
 
   // Handle context changes from the form
   const handleContextChange = (formData: DecisionContext | null) => {
@@ -37,6 +38,13 @@ export default function Home() {
   // Handle initial recommendation from the form
   const handleInitialRecommendation = (recommendation: FinalRecommendation) => {
     setInitialRecommendation(recommendation)
+    // Automatically collapse sidebar when recommendations are received (Focus Mode)
+    setIsSidebarOpen(false)
+  }
+
+  // Handle sidebar toggle from the layout component
+  const handleSidebarToggle = (isOpen: boolean) => {
+    setIsSidebarOpen(isOpen)
   }
 
   return (
@@ -51,11 +59,14 @@ export default function Home() {
               onInitialRecommendation={handleInitialRecommendation}
             />
           }
+          isOpen={isSidebarOpen}
+          onToggle={handleSidebarToggle}
         >
           <PersistentChat 
             decisionContext={decisionContext} 
             initialRecommendation={initialRecommendation}
             onDecisionContextChange={handleContextChange}
+            onSidebarToggle={() => setIsSidebarOpen(true)}
           />
         </TwoColumnLayout>
       </main>

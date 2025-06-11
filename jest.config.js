@@ -16,6 +16,8 @@ const customJestConfig = {
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // Mock lucide-react to avoid ESM issues in tests
+    'lucide-react': '<rootDir>/src/__mocks__/lucide-react.js',
   },
   transformIgnorePatterns: [
     'node_modules/(?!(lucide-react)/)',
