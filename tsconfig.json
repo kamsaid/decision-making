@@ -19,6 +19,7 @@
       }
     ],
     "paths": {
+      "framer-motion": ["./src/lib/framer-motion-stub.tsx"],
       "@/*": ["./src/*"]
     }
   },

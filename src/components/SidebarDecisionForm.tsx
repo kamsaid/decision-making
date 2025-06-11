@@ -10,14 +10,22 @@ interface FormData {
   constraints: string[]
 }
 
+// Interface for final recommendation
+interface FinalRecommendation {
+  summary: string
+  reasoning: string
+  keyPoints: string[]
+}
+
 // Interface for the component props
 interface SidebarDecisionFormProps {
   onFormSubmit?: (formData: FormData) => void
   onContextChange?: (formData: FormData | null) => void
+  onInitialRecommendation?: (recommendation: FinalRecommendation) => void
 }
 
 // Sidebar-optimized DecisionForm component
-export default function SidebarDecisionForm({ onFormSubmit, onContextChange }: SidebarDecisionFormProps) {
+export default function SidebarDecisionForm({ onFormSubmit, onContextChange, onInitialRecommendation }: SidebarDecisionFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentContext, setCurrentContext] = useState<FormData | null>(null)
@@ -64,9 +72,16 @@ export default function SidebarDecisionForm({ onFormSubmit, onContextChange }: S
       // Success - context is now available for chat
       console.log('Recommendations received:', data)
       
+      // Pass the initial recommendation to parent component if callback is provided
+      if (data.finalRecommendation && onInitialRecommendation) {
+        onInitialRecommendation(data.finalRecommendation)
+      }
+      
     } catch (error) {
       console.error('Error:', error)
       setError(error instanceof Error ? error.message : 'An unexpected error occurred')
+      // Clear context on error so "Ready for Chat" doesn't appear
+      setCurrentContext(null)
     } finally {
       setIsLoading(false)
     }
