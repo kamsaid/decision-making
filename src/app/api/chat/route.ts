@@ -2,10 +2,17 @@ import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { z } from 'zod'
 
-// Initialize OpenAI client with official OpenAI API
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Helper function to create OpenAI client - called inside request handler
+function createOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY environment variable is required')
+  }
+  
+  return new OpenAI({
+    apiKey,
+  })
+}
 
 const RequestSchema = z.object({
   message: z.string(),
@@ -118,8 +125,11 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { message, context, preferences, constraints, previousMessages, contextDelta } = RequestSchema.parse(body)
 
-    // Check for OpenAI API key configuration
-    if (!process.env.OPENAI_API_KEY) {
+    // Create OpenAI client inside request handler to avoid build-time errors
+    let openai: OpenAI
+    try {
+      openai = createOpenAIClient()
+    } catch (error) {
       return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
     }
 

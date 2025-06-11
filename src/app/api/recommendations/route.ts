@@ -13,14 +13,21 @@ const WORKER_TIMEOUT = 15000
 const SYNTHESIS_TIMEOUT = 15000
 const WORKER_PARALLEL_TIMEOUT = 45000
 
-// Initialize OpenAI client with official OpenAI API
-const openai = new OpenAI({
- apiKey: process.env.OPENAI_API_KEY || '',
- timeout: 55000,
- maxRetries: 0,
- defaultQuery: { stream: 'false' },
- defaultHeaders: { 'Cache-Control': 'no-store' }
-})
+// Helper function to create OpenAI client - called inside request handler
+function createOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY environment variable is required')
+  }
+  
+  return new OpenAI({
+    apiKey,
+    timeout: 55000,
+    maxRetries: 0,
+    defaultQuery: { stream: 'false' },
+    defaultHeaders: { 'Cache-Control': 'no-store' }
+  })
+}
 
 const RequestSchema = z.object({
  context: z.string().min(1),
@@ -125,7 +132,7 @@ async function runWithTimeout<T>(promise: Promise<T>, timeoutMs: number): Promis
  return Promise.race([promise, timeout]);
 }
 
-async function runOrchestrator(context: string, preferences: string[], constraints: string[]) {
+async function runOrchestrator(openai: OpenAI, context: string, preferences: string[], constraints: string[]) {
  const startTime = Date.now()
  try {
    console.log('Orchestrator started:', new Date().toISOString())
@@ -159,7 +166,7 @@ async function runOrchestrator(context: string, preferences: string[], constrain
  }
 }
 
-async function runWorker(context: string, preferences: string[], constraints: string[], taskType: string, taskDescription: string) {
+async function runWorker(openai: OpenAI, context: string, preferences: string[], constraints: string[], taskType: string, taskDescription: string) {
  const startTime = Date.now()
  try {
    console.log(`Worker ${taskType} started:`, new Date().toISOString())
@@ -193,7 +200,7 @@ async function runWorker(context: string, preferences: string[], constraints: st
  }
 }
 
-async function synthesizeOutputs(context: string, workerOutputs: any[]) {
+async function synthesizeOutputs(openai: OpenAI, context: string, workerOutputs: any[]) {
  const startTime = Date.now()
  try {
    console.log('Synthesis started:', new Date().toISOString())
@@ -233,16 +240,19 @@ export async function POST(req: Request) {
    const body = await req.json()
    const { context, preferences, constraints } = RequestSchema.parse(body)
 
-   // Check for OpenAI API key configuration
-   if (!process.env.OPENAI_API_KEY) {
+   // Create OpenAI client inside request handler to avoid build-time errors
+   let openai: OpenAI
+   try {
+     openai = createOpenAIClient()
+   } catch (error) {
      throw new Error('API key not configured')
    }
 
-   const orchestratorOutput = await runOrchestrator(context, preferences, constraints)
+   const orchestratorOutput = await runOrchestrator(openai, context, preferences, constraints)
    const tasks = TaskListSchema.parse(orchestratorOutput).tasks
 
    const workerPromises = tasks.map((task, index) => {
-     return runWorker(context, preferences, constraints, task.type, task.description)
+     return runWorker(openai, context, preferences, constraints, task.type, task.description)
        .then(result => ({ type: task.type, output: result, error: null }))
        .catch(error => ({ type: task.type, output: null, error: error.message }))
    })
@@ -258,6 +268,7 @@ export async function POST(req: Request) {
    }
 
    const finalRecommendation = await synthesizeOutputs(
+     openai,
      context, 
      successfulOutputs.map(w => ({
        type: w.type,
