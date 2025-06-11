@@ -20,10 +20,9 @@ export const motion: Record<string, React.ComponentType<any>> = new Proxy(
   {},
   {
     get: (_, key: string) =>
-      // eslint-disable-next-line react/display-name
-      React.forwardRef(({ children, ...rest }: any, ref) =>
-        React.createElement(key, { ...rest, ref }, children),
-      ),
+      React.forwardRef(function MotionComponent({ children, ...rest }: any, ref) {
+        return React.createElement(key, { ...rest, ref }, children)
+      }),
   },
 )
 
@@ -31,5 +30,6 @@ export const motion: Record<string, React.ComponentType<any>> = new Proxy(
 // Providing it avoids potential undefined errors.
 export const m = motion
 
-// Default export parity with framer-motion’s module design.
-export default { motion, AnimatePresence, m }
+// Fixed: Create named variable for default export instead of anonymous object
+const FramerMotionStub = { motion, AnimatePresence, m }
+export default FramerMotionStub

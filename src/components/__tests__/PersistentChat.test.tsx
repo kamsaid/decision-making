@@ -1,14 +1,18 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import React from 'react'
 import PersistentChat from '@/components/PersistentChat'
 
 // Mock framer-motion for tests
 jest.mock('framer-motion', () => {
-  const React = require('react')
   return {
     motion: {
-      div: React.forwardRef((props: any, ref) => React.createElement('div', { ...props, ref })),
+      div: React.forwardRef<HTMLDivElement, any>(function MotionDiv(props: any, ref) {
+        return React.createElement('div', { ...props, ref })
+      }),
     },
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    AnimatePresence: function AnimatePresence({ children }: { children: React.ReactNode }) {
+      return <>{children}</>
+    },
   }
 })
 
@@ -20,18 +24,20 @@ jest.mock('lucide-react', () => ({
 
 // Mock the Chat component
 jest.mock('@/components/ui/chat', () => ({
-  Chat: ({ messages, onSendMessage, ...props }: any) => (
-    <div data-testid="chat-component" {...props}>
-      <div data-testid="chat-messages">
-        {messages.map((message: any, index: number) => (
-          <div key={index} data-testid="chat-message-row" className={message.role === 'user' ? 'justify-end' : 'justify-start'}>
-            <div>{message.content}</div>
-          </div>
-        ))}
+  Chat: function Chat({ messages, onSendMessage, ...props }: any) {
+    return (
+      <div data-testid="chat-component" {...props}>
+        <div data-testid="chat-messages">
+          {messages.map((message: any, index: number) => (
+            <div key={index} data-testid="chat-message-row" className={message.role === 'user' ? 'justify-end' : 'justify-start'}>
+              <div>{message.content}</div>
+            </div>
+          ))}
+        </div>
+        <button onClick={() => onSendMessage('test message')}>Send Test Message</button>
       </div>
-      <button onClick={() => onSendMessage('test message')}>Send Test Message</button>
-    </div>
-  ),
+    )
+  },
 }))
 
 describe('PersistentChat', () => {

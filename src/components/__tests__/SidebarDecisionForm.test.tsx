@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import React from 'react'
 import SidebarDecisionForm from '@/components/SidebarDecisionForm'
 
 // Mock the API calls
@@ -6,12 +7,15 @@ global.fetch = jest.fn()
 
 // Mock framer-motion for tests
 jest.mock('framer-motion', () => {
-  const React = require('react')
   return {
     motion: {
-      div: React.forwardRef((props: any, ref) => React.createElement('div', { ...props, ref })),
+      div: React.forwardRef<HTMLDivElement, any>(function MotionDiv(props: any, ref) {
+        return React.createElement('div', { ...props, ref })
+      }),
     },
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    AnimatePresence: function AnimatePresence({ children }: { children: React.ReactNode }) {
+      return <>{children}</>
+    },
   }
 })
 
@@ -25,42 +29,56 @@ jest.mock('lucide-react', () => ({
 
 // Mock the UI components
 jest.mock('@/components/ui/accordion', () => ({
-  Accordion: ({ children, ...props }: any) => <div data-testid="accordion" {...props}>{children}</div>,
-  AccordionContent: ({ children, ...props }: any) => <div data-testid="accordion-content" {...props}>{children}</div>,
-  AccordionItem: ({ children, ...props }: any) => <div data-testid="accordion-item" {...props}>{children}</div>,
-  AccordionTrigger: ({ children, ...props }: any) => <button data-testid="accordion-trigger" {...props}>{children}</button>,
+  Accordion: function Accordion({ children, ...props }: any) {
+    return <div data-testid="accordion" {...props}>{children}</div>
+  },
+  AccordionContent: function AccordionContent({ children, ...props }: any) {
+    return <div data-testid="accordion-content" {...props}>{children}</div>
+  },
+  AccordionItem: function AccordionItem({ children, ...props }: any) {
+    return <div data-testid="accordion-item" {...props}>{children}</div>
+  },
+  AccordionTrigger: function AccordionTrigger({ children, ...props }: any) {
+    return <button data-testid="accordion-trigger" {...props}>{children}</button>
+  },
 }))
 
 jest.mock('@/components/ui/input', () => ({
-  Input: (props: any) => <input data-testid="input" {...props} />,
+  Input: function Input(props: any) {
+    return <input data-testid="input" {...props} />
+  },
 }))
 
 jest.mock('@/components/ui/label', () => ({
-  Label: ({ children, ...props }: any) => <label data-testid="label" {...props}>{children}</label>,
+  Label: function Label({ children, ...props }: any) {
+    return <label data-testid="label" {...props}>{children}</label>
+  },
 }))
 
 // Mock decision form UI
 jest.mock('@/components/ui/decision-form', () => ({
-  DecisionFormUI: ({ onSubmit, isLoading, error, ...props }: any) => (
-    <div data-testid="decision-form-ui" {...props}>
-      <form onSubmit={(e) => {
-        e.preventDefault()
-        onSubmit({
-          context: 'Should I move to New York?',
-          preferences: ['Good career opportunities'],
-          constraints: ['Limited budget']
-        })
-      }}>
-        <input placeholder="e.g., moving to a new city, changing careers, buying a house" data-testid="context-input" />
-        <input placeholder="e.g., work-life balance, growth opportunities, financial stability" data-testid="preferences-input" />
-        <input placeholder="e.g., budget, timeline, family commitments" data-testid="constraints-input" />
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Loading...' : 'Get Recommendations'}
-        </button>
-        {error && <div data-testid="error-message">{error}</div>}
-      </form>
-    </div>
-  ),
+  DecisionFormUI: function DecisionFormUI({ onSubmit, isLoading, error, ...props }: any) {
+    return (
+      <div data-testid="decision-form-ui" {...props}>
+        <form onSubmit={(e) => {
+          e.preventDefault()
+          onSubmit({
+            context: 'Should I move to New York?',
+            preferences: ['Good career opportunities'],
+            constraints: ['Limited budget']
+          })
+        }}>
+          <input placeholder="e.g., moving to a new city, changing careers, buying a house" data-testid="context-input" />
+          <input placeholder="e.g., work-life balance, growth opportunities, financial stability" data-testid="preferences-input" />
+          <input placeholder="e.g., budget, timeline, family commitments" data-testid="constraints-input" />
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? 'Loading...' : 'Get Recommendations'}
+          </button>
+          {error && <div data-testid="error-message">{error}</div>}
+        </form>
+      </div>
+    )
+  },
 }))
 
 describe('SidebarDecisionForm', () => {

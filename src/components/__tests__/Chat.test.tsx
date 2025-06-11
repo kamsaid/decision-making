@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import React from 'react'
 
 // lucide-react uses ES modules which jest struggles with in a CJS context.
 // Mocking it prevents transform errors while still exercising our component logic.
@@ -15,35 +16,40 @@ jest.mock('lucide-react', () => ({
 // elements while still forwarding all received props so that the DOM tree
 // mirrors the production output closely enough for assertions.
 jest.mock('framer-motion', () => {
-  const React = require('react')
   return {
     //  Simple passthrough component for every HTML tag we require.  Add more
     //  as needed when the codebase grows.
     motion: {
-      div: React.forwardRef((props: any, ref) => React.createElement('div', { ...props, ref })),
+      div: React.forwardRef<HTMLDivElement, any>(function MotionDiv(props: any, ref) {
+        return React.createElement('div', { ...props, ref })
+      }),
     },
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    AnimatePresence: function AnimatePresence({ children }: { children: React.ReactNode }) {
+      return <>{children}</>
+    },
   }
 })
 
 // Mock the new ChatInput component to focus on testing Chat component logic
 jest.mock('@/components/ui/chat-input', () => ({
-  ChatInput: ({ onSendMessage, placeholder, disabled }: any) => (
-    <div data-testid="chat-input">
-      <input 
-        placeholder={placeholder} 
-        disabled={disabled}
-        data-testid="chat-input-field"
-      />
-      <button 
-        onClick={() => onSendMessage('test message')}
-        disabled={disabled}
-        data-testid="chat-send-button"
-      >
-        Send
-      </button>
-    </div>
-  )
+  ChatInput: function ChatInput({ onSendMessage, placeholder, disabled }: any) {
+    return (
+      <div data-testid="chat-input">
+        <input 
+          placeholder={placeholder} 
+          disabled={disabled}
+          data-testid="chat-input-field"
+        />
+        <button 
+          onClick={() => onSendMessage('test message')}
+          disabled={disabled}
+          data-testid="chat-send-button"
+        >
+          Send
+        </button>
+      </div>
+    )
+  }
 }))
 
 import { Chat } from '@/components/ui/chat'
